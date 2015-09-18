@@ -1,0 +1,10 @@
+{
+	"name": "paperchase-figurecrawl",
+	"version": "0.0.1",
+	"dependencies": {
+		"request": "2.62.0",
+		"async": "1.4.2",
+		"express": "4.13.3",
+		"node-phantom-simple": "2.0.5"
+	}
+}
