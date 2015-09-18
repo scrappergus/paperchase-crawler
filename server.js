@@ -7,7 +7,7 @@ var app = express();
 
 var pubmedEsummaryURL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=";
 
-app.get('/:pmid', function (req, res) {
+app.get('/pmid/:pmid', function (req, res) {
 	var pmid = req.params.pmid;
 
 	request.get(pubmedEsummaryURL+pmid, function (error, response, body) {
@@ -32,6 +32,18 @@ app.get('/:pmid', function (req, res) {
 			res.status(500).send("There was an error converting the PMID to a PII");
 		}
 	});
+});
+
+app.get('/pii/:pii', function(req, res) {
+	var filename = "./figuredata/"+req.params.pii+".json";
+	// really insecure
+	if (fs.existsSync(filename)){
+		var data = fs.readFileSync(filename, 'utf8');
+		res.setHeader('Content-Type', 'application/json');
+		res.send(data);
+	} else {
+		res.status(404).send("Figure data for PMID not found");
+	}
 });
 
 app.listen(4932);
