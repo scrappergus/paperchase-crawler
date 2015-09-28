@@ -4,6 +4,7 @@ var express = require('express');
 
 var app = express();
 
+app.use(express.static('public'));
 
 var pubmedEsummaryURL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=";
 
