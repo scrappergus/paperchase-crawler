@@ -48,7 +48,7 @@ function convert_article_title_to_uid(title_string, cb) {
 
 function uid_list_from_pii_list(pii_list, cb) {
 	var pii_list_string = pii_list.join(",");
-	var article_json_url = "http://imjo.ldev/doi-control/?journal=oncotarget&pii="+pii_list_string;
+	var article_json_url = config.doicontrol_url+"/doi-control/?journal=oncotarget&pii="+pii_list_string;
 	request(article_json_url, function(err, res, body) {
 		if(err){
 			cb(err);
