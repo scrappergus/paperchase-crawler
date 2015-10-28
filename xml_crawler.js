@@ -162,7 +162,7 @@ MongoClient.connect(dbURL, function(err, db) {
 						} else {
 							current_db_collection.update({ids: {"$in": o.ids}}, o, {upsert: true}, function(upsert_err, upsert_res){
 								if(upsert_err) console.err(upsert_err);
-								else console.log(upsert_res);
+								else console.log(upsert_res.result);
 								each_xml_cb();
 							});
 						}
