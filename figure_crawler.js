@@ -65,19 +65,19 @@ function scrapeFiguresForJournal(journalName, scrape_cb) {
 								   wcb);
 		},
 		function(volumeURLs, wcb) {
-			async.concatSeries(volumeURLs.slice(0,1), function(volumeURL, concat_cb){
+			async.concatSeries(volumeURLs, function(volumeURL, concat_cb){
 				evaluateFunctionOnPage(volumeURL,
 									   journalScripts[journalName].getArticleURLsFromVolumePage,
 									   concat_cb);
 			}, wcb);
 		},
 		function(articleURLs, wcb) {
-			async.mapSeries(articleURLs.slice(0,1), function(articleURL, map_cb){
+			async.mapSeries(articleURLs, function(articleURL, map_cb){
 				grabFiguresFromPage(articleURL, journalName, map_cb);
 			}, wcb);
 		},
 		function(figureList, wcb) {
-			async.mapSeries(figureList.slice(0,1), function(figureData, map_cb){
+			async.mapSeries(figureList, function(figureData, map_cb){
 				async.mapSeries([figureData.figures[0],figureData.figures[1]], function(figure, data_map_cb){
 					async.mapSeries(figure.imgURLs, uploadImageToS3ViaUrl, function(fig_map_err, uploadedImgURLs){
 						if(fig_map_err) { map_cb(fig_map_err); return; }
