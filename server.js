@@ -54,7 +54,6 @@ app.get('/fetchxml/:journalname/pii/:pii', function(req, res) {
 	get_xml_data_by_pii(journal_name, pii, function(xml_err, xml_res) {
 		if(xml_err) {
 			res.status(500).send(JSON.stringify(xml_err));
-			res.send(JSON.stringify(xml_err));
 		} else {
 			res.send(JSON.stringify(xml_res));
 		}
