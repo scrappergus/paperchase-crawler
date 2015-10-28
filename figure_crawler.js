@@ -164,10 +164,11 @@ MongoClient.connect(dbURL, function(db_err, db) {
 	scrapeFiguresForJournal("aging", function(err, scraped_figures) {
 		var figureCollection = db.collection(currentJournalName+"_figures");
 		async.each(scraped_figures, function(o, each_cb){
-			figureCollection.update({ids: {"$in": o.ids}}, o, {upsert: true});
-			console.log(JSON.stringify(o,null,1));
-			console.log("stored!");
-			each_cb();
+			figureCollection.update({ids: {"$in": o.ids}}, o, {upsert: true}, function(upsert_err, upsert_res){
+				if(upsert_err) console.err(upsert_err);
+				else console.log(upsert_res);
+				each_cb();
+			});
 		}, function() {
 			console.log("done scraping figures!");
 			db.close();
