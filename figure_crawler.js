@@ -135,10 +135,10 @@ function uploadImageToS3ViaUrl(imgURL, cb) {
 function grabFiguresFromPage(pageURL, journalName, cb) {
 	evaluateFunctionOnPage(pageURL, journalScripts.aging.getFigureDataFromArticle, function(err, result) {
 		var pii = pageURL.split("/").pop().split(".").shift();
-		result.ids = {
+		result.ids = [{
 			type: "pii",
 			id: pii
-		};
+		}];
 		cb(null, result);
 	});
 }
