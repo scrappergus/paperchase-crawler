@@ -78,7 +78,8 @@ function scrapeFiguresForJournal(journalName, scrape_cb) {
 		},
 		function(figureList, wcb) {
 			async.mapSeries(figureList, function(figureData, map_cb){
-				async.mapSeries([figureData.figures[0],figureData.figures[1]], function(figure, data_map_cb){
+				async.mapSeries(figureData.figures, function(figure, data_map_cb){
+					if(figure == void(0)) { data_map_cb(null, figure); return; }
 					async.mapSeries(figure.imgURLs, uploadImageToS3ViaUrl, function(fig_map_err, uploadedImgURLs){
 						if(fig_map_err) { map_cb(fig_map_err); return; }
 						figure.imgURLs = uploadedImgURLs;
