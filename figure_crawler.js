@@ -151,9 +151,9 @@ function evaluateFunctionOnPage(pageurl, pagefunc, cb) {
 			console.log("phantom: opening "+pageurl);
 			return page.open(pageurl, function(open_err, status){
 				if(open_err) { cb(open_err); return; }
-				return page.evaluate(pagefunc, function(){
+				return page.evaluate(pagefunc, function(ev_err, ev_res){
 					ph.exit();
-					cb();
+					cb(ev_err, ev_res);
 				});
 			});
 		});
