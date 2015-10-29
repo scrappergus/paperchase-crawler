@@ -49,7 +49,7 @@ function get_xml_with_figures_by_pii(journal_name, pii, cb) {
 		function(xml_data, wcb) {
 			get_figures_by_pii(journal_name, pii, function(err, figure_data) {
 				if(err) { wcb(err); return; }
-				if(res.length < 1) { wcb(null, xml_data); return; }
+				if(figure_data.length < 1) { wcb(null, xml_data); return; }
 				xml_data[0].figures = figure_data[0].figures;
 				wcb(null, xml_data);
 			});
