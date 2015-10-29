@@ -44,15 +44,13 @@ function get_xml_with_figures_by_pii(journal_name, pii, cb) {
 	var query = {"ids": {"type": "pii", "id": pii}};
 	async.waterfall([
 		function(wcb) {
-			var collection_name = journal_name+"_xml";
-			mongo_query(collection_name, query, wcb);
+			get_xml_data_by_pii(journal_name, pii, wcb);
 		},
 		function(xml_data, wcb) {
-			var collection_name = journal_name+"_figures";
-			mongo_query(collection_name, query, function(err, res) {
+			get_figures_by_pii(journal_name, pii, function(err, figure_data) {
 				if(err) { wcb(err); return; }
 				if(res.length < 1) { wcb(null, xml_data); return; }
-				xml_data.figures = res[0].figures;
+				xml_data[0].figures = figure_data[0].figures;
 				console.log(res);
 				wcb(null, xml_data);
 			});
