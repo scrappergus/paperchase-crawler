@@ -29,9 +29,9 @@ function get_journal_xml_data(journal_name, cb) {
 	mongo_query(collection_name, {}, cb);
 }
 
-function get_xml_data_by_pii(pii, journal_name, cb){
+function get_xml_data_by_pii(journal_name, pii, cb){
 	var collection_name = journal_name+"_xml";
-	var query = {"ids": {"$in": [{"type": "pii", "id": pii}]}};
+	var query = {"ids": {"type": "pii", "id": pii}};
 	mongo_query(collection_name, query, cb);
 }
 
