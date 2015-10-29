@@ -51,7 +51,6 @@ function get_xml_with_figures_by_pii(journal_name, pii, cb) {
 				if(err) { wcb(err); return; }
 				if(res.length < 1) { wcb(null, xml_data); return; }
 				xml_data[0].figures = figure_data[0].figures;
-				console.log(res);
 				wcb(null, xml_data);
 			});
 		}
