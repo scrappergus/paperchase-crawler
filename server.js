@@ -9,8 +9,6 @@ var app = express();
 
 app.use(express.static('public'));
 
-var pubmedEsummaryURL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=";
-
 function mongo_query(collection_name, query, cb) {
 	MongoClient.connect(dbURL, function(db_err, db) {
 		if(db_err) { cb(db_err); return; }
@@ -29,8 +27,14 @@ function get_journal_xml_data(journal_name, cb) {
 	mongo_query(collection_name, {}, cb);
 }
 
-function get_xml_data_by_pii(journal_name, pii, cb){
+function get_xml_data_by_pii(journal_name, pii, cb) {
 	var collection_name = journal_name+"_xml";
+	var query = {"ids": {"type": "pii", "id": pii}};
+	mongo_query(collection_name, query, cb);
+}
+
+function get_figures_by_pii(journal_name, pii, cb) {
+	var collection_name = journal_name+"_figures";
 	var query = {"ids": {"type": "pii", "id": pii}};
 	mongo_query(collection_name, query, cb);
 }
@@ -60,43 +64,17 @@ app.get('/fetchxml/:journalname/pii/:pii', function(req, res) {
 	});
 });
 
-app.get('/pmid/:pmid', function (req, res) {
-	var pmid = req.params.pmid;
-
-	request.get(pubmedEsummaryURL+pmid, function (error, response, body) {
-		var esummaryData = JSON.parse(body);
-		if (!esummaryData["error"] && !error) {
-			var filteredIDs = esummaryData["result"][""+pmid]["articleids"].filter(function(o){ return o["idtype"] == "pii" });
-			if(filteredIDs.length > 0) {
-				var pii = filteredIDs[0]["value"];
-				var filename = "./figuredata/"+pii+".json";
-				// really insecure
-				if (fs.existsSync(filename)){
-					var data = fs.readFileSync(filename, 'utf8');
-					res.setHeader('Content-Type', 'application/json');
-					res.send(data);
-				} else {
-					res.status(404).send("Figure data for PMID not found");
-				}
-			} else {
-				res.status(404).send("No PII for this PMID");
-			}
+app.get('/fetchfigures/:journalname/pii/:pii', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	var journal_name = req.params.journalname;
+	var pii = req.params.pii;
+	get_figures_by_pii(journal_name, pii, function(xml_err, xml_res) {
+		if(xml_err) {
+			res.status(500).send(JSON.stringify(xml_err));
 		} else {
-			res.status(500).send("There was an error converting the PMID to a PII");
+			res.send(JSON.stringify(xml_res));
 		}
 	});
-});
-
-app.get('/pii/:pii', function(req, res) {
-	var filename = "./figuredata/"+req.params.pii+".json";
-	// really insecure
-	if (fs.existsSync(filename)){
-		var data = fs.readFileSync(filename, 'utf8');
-		res.setHeader('Content-Type', 'application/json');
-		res.send(data);
-	} else {
-		res.status(404).send("Figure data for PMID not found");
-	}
 });
 
 app.listen(4932);
