@@ -36,18 +36,21 @@ var journalScripts = {
 			var figures = Array.prototype.slice.call(document.querySelectorAll("div.figure"));
 			var processedFigures = [];
 			figures.forEach(function(figure){
-				var figureID = (figure.id || "");
+				var figureID = (figure.id || null);
 				var imgURLs = Array.prototype.slice.call(figure.querySelectorAll("img")).map(function(o){ return o.src; });
-				var figureText = (function() {
-					var ft = figure.querySelector("p");
-					if(ft != null) {
-						return ft.innerText;
-					} else {
-						return "";
-					}
-				})();
+				var figureCopyEl = figure.querySelector("p");
+				var figureText = "";
+				var figureTitle = "";
+				if(figureCopyEl != null) {
+					var figureTitleEl = figureCopyEl.querySelector("b");
+					figureTitle = figureTitleEl ? figureTitleEl.innerText : "";
+					if(figureID == null) figureID = figureTitleEl ? figureTitle.split(" ").slice(0,2)[0][0]+figureTitle.split(" ").slice(0,2)[1][0] : "";
+					figureCopyEl.removeChild(figureTitleEl);
+					figureText = figureCopyEl.innerText;
+				}
 				processedFigures.push({
 					figureID: figureID,
+					figureTitle: figureTitle,
 					figureText: figureText,
 					imgURLs: imgURLs
 				});
@@ -73,7 +76,7 @@ function scrapeFiguresForJournal(journalName, scrape_cb) {
 		},
 		function(articleURLs, wcb) {
 			async.mapSeries(articleURLs, function(articleURL, map_cb){
-				grabFiguresFromPage(articleURL, journalName, map_cb);
+				Page(articleURL, journalName, map_cb);
 			}, wcb);
 		},
 		function(figureList, wcb) {
@@ -106,42 +109,33 @@ function getImageDataFromURL(imgURL, cb) {
 }
 
 function uploadImageToS3ViaUrl(imgURL, cb) {
-	getImageDataFromURL(imgURL, function(err, imgData){
-		if(err) { cb(err, null); }
-		else {
-			var tempdir = "./temp";
-			if (!fs.existsSync(tempdir)){
-				fs.mkdirSync(tempdir);
-			}
-			var imgFilename = Date.now()+"_"+imgURL.split("/").pop();
-			var imgFilepath = tempdir + "/" + imgFilename;
-			fs.writeFile(imgFilepath, imgData, function(err){
-				if(err) {
-					cb(err);
-				} else {
-					var uploader = s3Client.uploadFile({localFile: imgFilepath, s3Params: {Bucket: config.s3.bucket, Key: imgFilename}});
-					uploader.on("error", function(err) {cb(err)});
-					uploader.on("progress", function() {console.log(imgFilename+" progress:", uploader.progressTotal)});
-					uploader.on("end", function() {
-						var s3url = s3.getPublicUrlHttp(config.s3.bucket, imgFilename);
-						cb(null, s3url);
-						fs.unlink(imgFilepath);
-					});
+	setTimeout(function(){
+		getImageDataFromURL(imgURL, function(err, imgData){
+			if(err) { cb(err, null); }
+			else {
+				var tempdir = "./temp";
+				if (!fs.existsSync(tempdir)){
+					fs.mkdirSync(tempdir);
 				}
-			});
-		}
-	});
-}
-
-function grabFiguresFromPage(pageURL, journalName, cb) {
-	evaluateFunctionOnPage(pageURL, journalScripts.aging.getFigureDataFromArticle, function(err, result) {
-		var pii = pageURL.split("/").pop().split(".").shift();
-		result.ids = [{
-			type: "pii",
-			id: pii
-		}];
-		cb(null, result);
-	});
+				var imgFilename = Date.now()+"_"+imgURL.split("/").pop();
+				var imgFilepath = tempdir + "/" + imgFilename;
+				fs.writeFile(imgFilepath, imgData, function(err){
+					if(err) {
+						cb(err);
+					} else {
+						var uploader = s3Client.uploadFile({localFile: imgFilepath, s3Params: {Bucket: config.s3.bucket, Key: imgFilename}});
+						uploader.on("error", function(err) {cb(err)});
+						uploader.on("progress", function() {console.log(imgFilename+" progress:", uploader.progressTotal)});
+						uploader.on("end", function() {
+							var s3url = s3.getPublicUrlHttp(config.s3.bucket, imgFilename);
+							cb(null, s3url);
+							fs.unlink(imgFilepath);
+						});
+					}
+				});
+			}
+		});
+	},2500);
 }
 
 function evaluateFunctionOnPage(pageurl, pagefunc, cb) {
