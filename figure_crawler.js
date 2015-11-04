@@ -76,7 +76,7 @@ function scrapeFiguresForJournal(journalName, scrape_cb) {
 		},
 		function(articleURLs, wcb) {
 			async.mapSeries(articleURLs, function(articleURL, map_cb){
-				Page(articleURL, journalName, map_cb);
+				grabFiguresFromPage(articleURL, journalName, map_cb);
 			}, wcb);
 		},
 		function(figureList, wcb) {
@@ -155,6 +155,17 @@ function evaluateFunctionOnPage(pageurl, pagefunc, cb) {
 			});
 		});
 	}, 2500);
+}
+
+function grabFiguresFromPage(pageURL, journalName, cb) {
+	evaluateFunctionOnPage(pageURL, journalScripts.aging.getFigureDataFromArticle, function(err, result) {
+		var pii = pageURL.split("/").pop().split(".").shift();
+		result.ids = [{
+			type: "pii",
+			id: pii
+		}];
+		cb(null, result);
+	});
 }
 
 MongoClient.connect(dbURL, function(db_err, db) {
