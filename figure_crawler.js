@@ -139,20 +139,22 @@ function uploadImageToS3ViaUrl(imgURL, cb) {
 }
 
 function evaluateFunctionOnPage(pageurl, pagefunc, cb) {
-	phantom.create(function(create_err, ph){
-		if(create_err) { cb(create_err); return; }
-		return ph.createPage(function(createpage_err, page){
-			if(createpage_err) { cb(createpage_err); return; }
-			console.log("phantom: opening "+pageurl);
-			return page.open(pageurl, function(open_err, status){
-				if(open_err) { cb(open_err); return; }
-				return page.evaluate(pagefunc, function(ev_err, ev_res){
-					ph.exit();
-					cb(ev_err, ev_res);
+	setTimeout(function(){
+		phantom.create(function(create_err, ph){
+			if(create_err) { cb(create_err); return; }
+			return ph.createPage(function(createpage_err, page){
+				if(createpage_err) { cb(createpage_err); return; }
+				console.log("phantom: opening "+pageurl);
+				return page.open(pageurl, function(open_err, status){
+					if(open_err) { cb(open_err); return; }
+					return page.evaluate(pagefunc, function(ev_err, ev_res){
+						ph.exit();
+						cb(ev_err, ev_res);
+					});
 				});
 			});
 		});
-	});
+	}, 2500);
 }
 
 MongoClient.connect(dbURL, function(db_err, db) {
