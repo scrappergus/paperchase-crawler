@@ -175,7 +175,7 @@ MongoClient.connect(dbURL, function(db_err, db) {
 		var figureCollection = db.collection(currentJournalName+"_figures");
 		async.each(scraped_figures, function(o, each_cb){
 			figureCollection.update({ids: {"$in": o.ids}}, o, {upsert: true}, function(upsert_err, upsert_res){
-				if(upsert_err) console.err(upsert_err);
+				if(upsert_err) console.error(upsert_err);
 				else console.log(upsert_res.result);
 				each_cb();
 			});
