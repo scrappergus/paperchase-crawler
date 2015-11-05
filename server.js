@@ -52,7 +52,7 @@ function get_xml_with_files_by_pii(journal_name, pii, cb) {
 			get_xml_data_by_pii(journal_name, pii, wcb);
 		},
 		function(xml_data, wcb) {
-			if(xml_data == void(0)) cb({"error": "No XML data found for this PII."});
+			if(xml_data == void(0)) {wcb({"error": "No XML data found for this PII."}); return; };
 			get_pdf_by_pii(journal_name, pii, function(err, pdf) {
 				if(pdf != void(0)) xml_data.pdf_url = pdf.pdf_url;
 
