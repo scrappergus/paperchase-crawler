@@ -42,12 +42,17 @@ var journalScripts = {
 				var figureText = "";
 				var figureTitle = "";
 				if(figureCopyEl != null) {
-					var figureTitleEl = figureCopyEl.querySelector("b");
-					figureTitle = figureTitleEl ? figureTitleEl.innerText : "";
-					if(figureID == null) figureID = figureTitleEl ? figureTitle.split(" ").slice(0,2)[0][0]+figureTitle.split(" ").slice(0,2)[1][0] : "";
-					figureCopyEl.removeChild(figureTitleEl);
-					figureText = figureCopyEl.innerText;
+				    var figureTitleEl = figureCopyEl.querySelector("b");
+				    figureTitle = figureTitleEl ? figureTitleEl.innerText : "";
+				    if(figureID == null) {
+				        var titlePieces = figureTitle.split(" ").slice(0,2);
+				        if(titlePieces.length >= 2) figureID = titlePieces[0]+titlePieces[1];
+				        else figureID = "";
+				    }
+				    figureCopyEl.removeChild(figureTitleEl);
+				    figureText = figureCopyEl.innerText;
 				}
+
 				processedFigures.push({
 					figureID: figureID,
 					figureTitle: figureTitle,
@@ -135,7 +140,7 @@ function uploadImageToS3ViaUrl(imgURL, cb) {
 				});
 			}
 		});
-	},2500);
+	},3000);
 }
 
 function evaluateFunctionOnPage(pageurl, pagefunc, cb) {
@@ -154,12 +159,14 @@ function evaluateFunctionOnPage(pageurl, pagefunc, cb) {
 				});
 			});
 		});
-	}, 2500);
+	}, 3000);
 }
 
 function grabFiguresFromPage(pageURL, journalName, cb) {
 	evaluateFunctionOnPage(pageURL, journalScripts.aging.getFigureDataFromArticle, function(err, result) {
+		if(err) { cb(err); return; }
 		var pii = pageURL.split("/").pop().split(".").shift();
+		if(result == null) result = {figures:[]};
 		result.ids = [{
 			type: "pii",
 			id: pii
