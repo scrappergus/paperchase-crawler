@@ -41,7 +41,7 @@ function get_figures_by_pii(journal_name, pii, cb) {
 }
 
 function get_pdf_by_pii(journal_name, pii, cb) {
-	var collection_name = journal_name="_pdfs";
+	var collection_name = journal_name+"_pdfs";
 	var query = {"ids": {"type": "pii", "id": pii}};
 	mongo_query(collection_name, query, cb);
 }
