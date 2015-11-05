@@ -40,11 +40,24 @@ function get_figures_by_pii(journal_name, pii, cb) {
 	mongo_query(collection_name, query, cb);
 }
 
-function get_xml_with_figures_by_pii(journal_name, pii, cb) {
+function get_pdf_by_pii(journal_name, pii, cb) {
+	var collection_name = journal_name="_pdf";
 	var query = {"ids": {"type": "pii", "id": pii}};
+	mongo_query(collection_name, query, cb);
+}
+
+function get_xml_with_files_by_pii(journal_name, pii, cb) {
 	async.waterfall([
 		function(wcb) {
 			get_xml_data_by_pii(journal_name, pii, wcb);
+		},
+		function(xml_data, wcb) {
+			if(xml_data == void(0)) cb({"error": "No XML data found for this PII."});
+			get_pdf_by_pii(journal_name, pii, function(err, pdf) {
+				if(pdf != void(0)) xml_data.pdf_url = pdf.pdf_url;
+
+				wcb(null, xml_data);
+			});
 		},
 		function(xml_data, wcb) {
 			get_figures_by_pii(journal_name, pii, function(err, figure_data) {
@@ -99,7 +112,7 @@ app.get('/xmlfigures/:journalname/pii/:pii', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	var journal_name = req.params.journalname;
 	var pii = req.params.pii;
-	get_xml_with_figures_by_pii(journal_name, pii, function(xml_err, xml_res) {
+	get_xml_with_files_by_pii(journal_name, pii, function(xml_err, xml_res) {
 		if(xml_err) {
 			res.status(500).send(JSON.stringify(xml_err));
 		} else {
