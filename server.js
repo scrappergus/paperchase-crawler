@@ -41,7 +41,7 @@ function get_figures_by_pii(journal_name, pii, cb) {
 }
 
 function get_pdf_by_pii(journal_name, pii, cb) {
-	var collection_name = journal_name="_pdf";
+	var collection_name = journal_name="_pdfs";
 	var query = {"ids": {"type": "pii", "id": pii}};
 	mongo_query(collection_name, query, cb);
 }
@@ -52,9 +52,9 @@ function get_xml_with_files_by_pii(journal_name, pii, cb) {
 			get_xml_data_by_pii(journal_name, pii, wcb);
 		},
 		function(xml_data, wcb) {
-			if(xml_data == void(0)) {wcb({"error": "No XML data found for this PII."}); return; };
+			if(xml_data.length == 0) {wcb({"error": "No XML data found for this PII."}); return; };
 			get_pdf_by_pii(journal_name, pii, function(err, pdf) {
-				if(pdf != void(0)) xml_data.pdf_url = pdf.pdf_url;
+				if(pdf.length != 0) xml_data[0].pdf_url = pdf[0].pdf_url;
 
 				wcb(null, xml_data);
 			});
@@ -110,6 +110,7 @@ app.get('/fetchfigures/:journalname/pii/:pii', function(req, res) {
 
 app.get('/xmlfigures/:journalname/pii/:pii', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
+	res.setHeader("Access-Control-Allow-Origin", "*");
 	var journal_name = req.params.journalname;
 	var pii = req.params.pii;
 	get_xml_with_files_by_pii(journal_name, pii, function(xml_err, xml_res) {
