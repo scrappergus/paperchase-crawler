@@ -6,8 +6,6 @@ var async = require('async');
 var request = require('request').defaults({ encoding: null });
 var MongoClient = require('mongodb').MongoClient;
 
-var dbURL = 'mongodb://localhost:27017/paperchase';
-
 var s3Client = s3.createClient({
 	s3Options: {
 		accessKeyId: config.s3.key,

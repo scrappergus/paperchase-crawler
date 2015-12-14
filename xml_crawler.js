@@ -7,7 +7,6 @@ var MongoClient = require('mongodb').MongoClient;
 var xml2js = require('xml2js');
 var request = require('request');
 
-var dbURL = 'mongodb://localhost:27017/paperchase';
 
 var ISSN_list = [{journal: "aging", issn:"1945-4589"},
 				 {journal: "oncotarget", issn:"1949-2553"},
