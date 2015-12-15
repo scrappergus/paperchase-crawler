@@ -1,0 +1,49 @@
+var config = {};
+config.doicontrol_url = "";
+config.ftp = {
+  host: "",
+  user: "",
+  pass: ""
+};
+
+config.s3 = {
+  key: "",
+  secret: "",
+  bucket: ""
+};
+
+config.journalSettings = {
+	"aging": {
+		"issn": "1945-4589",
+		"name": "Aging",
+		"shortName": "aging",
+		"dbUrl": ""
+	},
+	"oncotarget": {
+		"issn": "1949-2553",
+		"name": "Oncotarget",
+		"shortName": "oncotarget",
+		"dbUrl": ""
+	},
+	"oncoscience": {
+		"issn": "2331-4737",
+		"name": "Oncoscience",
+		"shortName": "oncoscience",
+		"dbUrl": ""
+	},
+	"genesandcancer": {
+		"issn": "1947-6027",
+		"name": "Genes & Cancer",
+		"shortName": "genesandcancer",
+		"dbUrl": ""
+	}
+}
+var live = false;
+if(!live){
+	config.journalSettings.aging.dbUrl = "mongodb://localhost:3001/crawler_aging";
+	journalSettings.oncotarget.dbUrl = "mongodb://localhost:3001/crawler_oncotarget";
+	journalSettings.oncoscience.dbUrl = "mongodb://localhost:3001/crawler_oncoscience";
+	journalSettings.genesandcancer.dbUrl = "mongodb://localhost:3001/crawler_genesandcancer";
+}
+
+module.exports = config;
