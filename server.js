@@ -3,15 +3,20 @@ var async = require('async');
 var request = require('request');
 var express = require('express');
 var MongoClient = require('mongodb').MongoClient;
-
-var dbURL = 'mongodb://localhost:27017/paperchase';
+// Custom
+var config = require('./config');
+var crawler = require('./crawlers/xmlCrawler');
+var journalSettings = config.journalSettings;
 
 var app = express();
 
 app.use(express.static('public'));
 
-function mongo_query(collection_name, query, cb) {
-	MongoClient.connect(dbURL, function(db_err, db) {
+function mongo_query(journal, collection_name, query, cb) {
+	// console.log('... mongo_query : ' + collection_name);
+	// console.log('.... ' + JSON.stringify(query));
+	var journalDb = journalSettings[journal].dbUrl;
+	MongoClient.connect(journalDb, function(db_err, db) {
 		if(db_err) { cb(db_err); return; }
 		var coll = db.collection(collection_name);
 		coll.find(query, function(find_err, cursor){
@@ -25,36 +30,42 @@ function mongo_query(collection_name, query, cb) {
 
 function get_journal_xml_data(journal_name, cb) {
 	var collection_name = journal_name+"_xml";
-	mongo_query(collection_name, {}, cb);
+	mongo_query(journal_name, collection_name, {}, cb);
 }
 
 function get_xml_data_by_pii(journal_name, pii, cb) {
-	var collection_name = journal_name+"_xml";
-	var query = {"ids": {"type": "pii", "id": pii}};
-	mongo_query(collection_name, query, cb);
+	var query = {
+		'ids': {
+			'type': 'pii',
+			'id': pii
+		}};
+	mongo_query(journal_name, 'xml', query, cb);
 }
 
 function get_figures_by_pii(journal_name, pii, cb) {
-	var collection_name = journal_name+"_figures";
 	var query = {"ids": {"type": "pii", "id": pii}};
-	mongo_query(collection_name, query, cb);
+	mongo_query(journal_name, 'figures', query, cb);
 }
 
 function get_pdf_by_pii(journal_name, pii, cb) {
-	var collection_name = journal_name+"_pdfs";
 	var query = {"ids": {"type": "pii", "id": pii}};
-	mongo_query(collection_name, query, cb);
+	mongo_query(journal_name, 'pdfs', query, cb);
 }
 
 function get_xml_with_files_by_pii(journal_name, pii, cb) {
+	console.log('get_xml_with_files_by_pii');
+	console.log(journal_name + ' : pii = ' + pii);
 	async.waterfall([
 		function(wcb) {
 			get_xml_data_by_pii(journal_name, pii, wcb);
 		},
 		function(xml_data, wcb) {
-			if(xml_data.length == 0) {wcb({"error": "No XML data found for this PII."}); return; };
+			if(xml_data.length == 0) {
+				wcb({"error": "No XML data found for this PII."});
+				return;
+			};
 			get_pdf_by_pii(journal_name, pii, function(err, pdf) {
-				if(pdf.length != 0) xml_data[0].pdf_url = pdf[0].pdf_url;
+				if(pdf.length != 0)xml_data[0].pdf_url = pdf[0].pdf_url;
 
 				wcb(null, xml_data);
 			});
@@ -113,6 +124,7 @@ app.get('/xmlfigures/:journalname/pii/:pii', function(req, res) {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	var journal_name = req.params.journalname;
 	var pii = req.params.pii;
+	// console.log('.. xmlfigures : ' + pii);
 	get_xml_with_files_by_pii(journal_name, pii, function(xml_err, xml_res) {
 		if(xml_err) {
 			res.send(JSON.stringify(xml_err));
@@ -122,5 +134,22 @@ app.get('/xmlfigures/:journalname/pii/:pii', function(req, res) {
 	});
 });
 
-app.listen(4932);
+// Batch crawler
+app.get('/crawl/:journalname/', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	var journalName = req.params.journalname;
+	// console.log('.. crawl : ' + journalName);
+	crawler.batchByJournal(journalName, function(crawl_xml_err, crawl_xml_res) {
+		if(crawl_xml_err) {
+			res.send(JSON.stringify(crawl_xml_err));
+		} else {
+			res.send(JSON.stringify(crawl_xml_res));
+		}
+	});
+});
+
+app.listen(4932, function(){
+
+});
 console.log("Server started");
