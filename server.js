@@ -135,7 +135,7 @@ app.get('/xmlfigures/:journalname/pii/:pii', function(req, res) {
 });
 
 // Batch crawler
-app.get('/crawl/:journalname/', function(req, res) {
+app.get('/crawl_xml/:journalname/', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	var journalName = req.params.journalname;
