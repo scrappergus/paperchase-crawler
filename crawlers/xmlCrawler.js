@@ -43,8 +43,8 @@ function massage_articleid_list(idlist, cb) {
 
 function get_pmid_list_for_issn(issn, cb) {
 	// console.log('... get_pmid_list_for_issn : ' + issn);
-	// var xml_pmid_list_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
-	var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=8"; // for testing locally, smaller response
+	var xml_pmid_list_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
+	// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=8"; // for testing locally, smaller response
 	request(pmidListUrl, function(err, res, body){
 		if(err) {
 			cb(err);
