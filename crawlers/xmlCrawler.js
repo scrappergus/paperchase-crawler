@@ -161,7 +161,7 @@ function get_and_save_article_xml(journal, pmid, cb) {
 									console.error(piiError);
 									cb(piiError);
 								}else{
-									console.log('PII = ' + pii);
+									// console.log('PII = ' + pii);
 									// PMC ID and PII exist, now query PMC to get Full Text XML
 									// XML full text filename based on PII.
 									var fullTextXmlFilename = pii + '.xml';
