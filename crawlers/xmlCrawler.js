@@ -63,13 +63,15 @@ function get_pmid_list_for_issn(issn, cb) {
 	});
 }
 
-function upload_xml_string_as_file_to_s3(xml_string, xml_filename, cb) {
+function upload_xml_string_as_file_to_s3(journal, xml_string, xml_filename, cb) {
 	// console.log('... upload_xml_string_as_file_to_s3 :' + xml_filename);
 	var tempdir = './temp';
+	var bucket = config.s3.bucket + journal;
+	console.log(bucket);
 	if (!fs.existsSync(tempdir)){
 		fs.mkdirSync(tempdir);
 	}
-	var xml_filepath = tempdir + "/" + xml_filename; // Temporary local path for XML
+	var xml_filepath = tempdir + '/' + xml_filename; // Temporary local path for XML
 	// String to XML
 	fs.writeFile(xml_filepath, xml_string, function(err){
 		if(err) {
@@ -79,17 +81,21 @@ function upload_xml_string_as_file_to_s3(xml_string, xml_filename, cb) {
 			var uploader = s3Client.uploadFile({
 				localFile: xml_filepath,
 				s3Params: {
-					Bucket: config.s3.bucket,
-					Key: xml_filename
+					Bucket: bucket,
+					Key: 'xml/'+xml_filename
 				}
 			});
-			uploader.on('error', function(err) {cb(err)});
+			uploader.on('error', function(err) {
+				console.error('ERROR');
+				console.error(err);
+				cb(err)
+			});
 			uploader.on('progress', function() {
 				// console.log('.....'+xml_filename+' progress:', uploader.progressTotal);
 				console.log('..... '+xml_filename+' progress:', Math.round(uploader.progressAmount / uploader.progressTotal * 100) + '% done');
 			});
 			uploader.on('end', function() {
-				var s3url = s3.getPublicUrlHttp(config.s3.bucket, xml_filename);
+				var s3url = s3.getPublicUrlHttp(bucket, xml_filename);
 				// console.log('..... url : ' + s3url);
 				cb(null, s3url);
 				fs.unlink(xml_filepath);
@@ -110,9 +116,22 @@ function get_pmcid_from_idlist(idlist, cb) {
 	});
 }
 
-function get_and_save_article_xml(pmid, cb) {
+
+function getPiiFromIdList(idlist, cb) {
+	// console.log('... get_pmcid_from_idlist');
+	// This will loop though all IDs retrieved from PubMed abstract/citation XML to just get the PMC ID, which will then be used to get the full text XML
+	async.filterSeries(idlist, function(id, filter_cb){
+		// console.log('.... ' + JSON.stringify(id));
+		filter_cb((id.type == 'pii'));
+	}, function(res){
+		if(res.length < 1) cb('no PII, skipping');
+		else cb(null, res[0].id);
+	});
+}
+
+function get_and_save_article_xml(journal, pmid, cb) {
 	// console.log('... get_and_save_article_xml : ' + pmid);
-	var abstract_xml_filename = Date.now()+'_'+pmid+'.xml';
+	var abstractXmlFilename = 'abstract_' + pmid + '.xml';
 	var abstract_xml_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pubmed&report=xml&id="+pmid;
 	// Use the PMID to then get the PMC ID, which will then be used below to get the Full Text XML from PMC
 	// Get XML containing article IDs (and abstract)
@@ -129,7 +148,7 @@ function get_and_save_article_xml(pmid, cb) {
 					get_pmcid_from_idlist(idlist, function(pmcid_err, pmcid){
 						if(pmcid_err) {
 							// Upload abstract XML even if no PMC ID
-							upload_xml_string_as_file_to_s3(abstract_xml_body, abstract_xml_filename, function(err, s3url){
+							upload_xml_string_as_file_to_s3(journal, abstract_xml_body, abstractXmlFilename, function(err, s3url){
 								if(err) { cb(err); }
 								else {
 									var pair = {ids: idlist, abstract_xml_url: s3url};
@@ -137,34 +156,44 @@ function get_and_save_article_xml(pmid, cb) {
 								}
 							});
 						} else {
-							// PMC ID exists, now query PMC to get Full Text XML
-							var full_xml_filename = Date.now() + '_' + pmcid + '.xml';
-							var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id='+pmcid;
-							get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
-								async.series([
-									function(scb) {
-										// Upload Abstract XML
-										upload_xml_string_as_file_to_s3(abstract_xml_body, abstract_xml_filename, scb);
-									},
-									function(scb) {
-										// Upload Full Text XML
-										upload_xml_string_as_file_to_s3(full_xml_body, full_xml_filename, scb);
-									}
-								],function(series_err, series_res){
-									if(series_err) {
-										cb(series_err);
-									}
-									else {
-										var pair = {
-											ids: idlist,
-											abstract_xml_url: series_res[0],
-											full_xml_url: series_res[1]
-										};
-										console.log('Upload success!');
-										// console.log(pair);
-										cb(null, pair);
-									}
-								});
+							getPiiFromIdList(idlist, function(piiError, pii){
+								if(piiError){
+									console.error('ERROR:');
+									console.error(piiError);
+									cb(piiError);
+								}else{
+									console.log('PII = ' + pii);
+									// PMC ID and PII exist, now query PMC to get Full Text XML
+									// XML full text filename based on PII.
+									var fullTextXmlFilename = pii + '.xml';
+									var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id='+pmcid;
+									get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
+										async.series([
+											function(scb) {
+												// Upload Abstract XML
+												upload_xml_string_as_file_to_s3(journal, abstract_xml_body, abstractXmlFilename, scb);
+											},
+											function(scb) {
+												// Upload Full Text XML
+												upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
+											}
+										],function(series_err, series_res){
+											if(series_err) {
+												cb(series_err);
+											}
+											else {
+												var pair = {
+													ids: idlist,
+													abstract_xml_url: series_res[0],
+													full_xml_url: series_res[1]
+												};
+												console.log('Upload success!');
+												// console.log(pair);
+												cb(null, pair);
+											}
+										});
+									});
+								}
 							});
 						}
 					});
@@ -182,13 +211,12 @@ module.exports = {
 		MongoClient.connect(journalDb, function(err, db) {
 			console.log('--- Begin Crawler : ' + journal);
 			var dbCollection = db.collection('xml');
-
 			get_pmid_list_for_issn(journalIssn, function(err, list){
 				// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
 				async.mapSeries(list, function(pmid, map_cb){
 					console.log('---- PMID: ' + pmid);
 					// Using PMID, retrieve abstract XML from PubMed and PMC ID, then if PMC ID retrieve full text XML
-					get_and_save_article_xml(pmid, function(articleXmlErr, articleXmlRes){
+					get_and_save_article_xml(journal, pmid, function(articleXmlErr, articleXmlRes){
 						if(articleXmlErr) {
 							console.log('ERROR');
 							console.error(articleXmlErr);
