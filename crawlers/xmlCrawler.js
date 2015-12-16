@@ -67,7 +67,6 @@ function upload_xml_string_as_file_to_s3(journal, xml_string, xml_filename, cb) 
 	// console.log('... upload_xml_string_as_file_to_s3 :' + xml_filename);
 	var tempdir = './temp';
 	var bucket = config.s3.bucket + journal;
-	console.log(bucket);
 	if (!fs.existsSync(tempdir)){
 		fs.mkdirSync(tempdir);
 	}
