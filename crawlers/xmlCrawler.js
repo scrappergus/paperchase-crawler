@@ -43,8 +43,8 @@ function massage_articleid_list(idlist, cb) {
 
 function get_pmid_list_for_issn(issn, cb) {
 	// console.log('... get_pmid_list_for_issn : ' + issn);
-	var xml_pmid_list_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
-	// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=8"; // for testing locally, smaller response
+	var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
+	// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=2"; // for testing locally, smaller response
 	request(pmidListUrl, function(err, res, body){
 		if(err) {
 			cb(err);
@@ -175,7 +175,7 @@ function get_and_save_article_xml(pmid, cb) {
 }
 
 module.exports = {
-	batchByJournal: function(journal){
+	batchByJournal: function(journal,cbBatch){
 		var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
 
@@ -190,6 +190,7 @@ module.exports = {
 					// Using PMID, retrieve abstract XML from PubMed and PMC ID, then if PMC ID retrieve full text XML
 					get_and_save_article_xml(pmid, function(articleXmlErr, articleXmlRes){
 						if(articleXmlErr) {
+							console.log('ERROR');
 							console.error(articleXmlErr);
 							map_cb();
 						}else{
@@ -199,35 +200,14 @@ module.exports = {
 					});
 				}, function(err, articlesXmlList){
 					if(err) {
-						console.error('ERROR:');
-						console.error(err);
+						console.log('ERROR:');
+						console.log(err);
+						cbBatch(err);
 					} else {
 						// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
-						// All XML uploaded. Now update the DB with the XML URLs
-						async.each(articlesXmlList, function(article, cbDb){
-							if(!article) {
-								cbDb();
-							} else {
-								// TODO: keep track of previous XML versions
-								dbCollection.update({ids: {'$in': article.ids}}, article, {upsert: true}, function(upsertErr, upsertRes){
-									if(upsertErr){
-										console.error('ERROR:');
-										console.err(upsertErr);
-									}else{
-										// console.error('UPDATED:');
-										// console.log(upsertRes.result);
-									}
-									cbDb();
-								});
-							}
-						}, function(upsertErr) {
-							if (upsertErr) {
-								return console.log(upsertErr);
-							}
-							console.log('--------- ' + journal + ': articles ---------');
-							console.log('Article Count = ' + list.length); // just count of all PMID for journal
-							console.log('Updated Count = ' + articlesXmlList.length); // count of articles that got updated
-						});
+						// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
+						// console.log('articlesXmlList'); console.log(articlesXmlList.length);
+						cbBatch(null, articlesXmlList);
 					}
 				});
 			});

@@ -140,11 +140,13 @@ app.get('/crawl_xml/:journalname/', function(req, res) {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	var journalName = req.params.journalname;
 	// console.log('.. crawl : ' + journalName);
-	crawler.batchByJournal(journalName, function(crawl_xml_err, crawl_xml_res) {
-		if(crawl_xml_err) {
-			res.send(JSON.stringify(crawl_xml_err));
+	crawler.batchByJournal(journalName, function(crawlXmlErr, crawlXmlRes) {
+		if(crawlXmlErr) {
+			console.log('ERROR:');
+			res.send(JSON.stringify(crawlXmlErr));
 		} else {
-			res.send(JSON.stringify(crawl_xml_res));
+			// console.log('crawlXmlRes');console.log(crawlXmlRes);
+			res.send(JSON.stringify(crawlXmlRes));
 		}
 	});
 });
