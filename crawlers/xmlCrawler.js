@@ -161,7 +161,7 @@ function get_and_save_article_xml(pmid, cb) {
 											full_xml_url: series_res[1]
 										};
 										console.log('Upload success!');
-										console.log(pair);
+										// console.log(pair);
 										cb(null, pair);
 									}
 								});
