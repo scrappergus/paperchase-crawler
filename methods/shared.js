@@ -45,13 +45,9 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 		if(articleIdx == parseInt(pmidAndTitles.length-1)){
 			// console.log(piiPmidPairs);
 			// res.send(piiPmidPairs);
-			var pairsFile = '';
-			for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
-				pairsFile += piiPmidPairs[matched]['pmid'] + '            ' + piiPmidPairs[matched]['pii'] + '\n';
-			}
 			console.log(unmatched);
 			// res.send(pairsFile);
-			cb(null,pairsFile);
+			cb(null,piiPmidPairs);
 		}
 	}
 }
