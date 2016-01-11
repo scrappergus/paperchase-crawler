@@ -5,8 +5,11 @@ var express = require('express');
 var MongoClient = require('mongodb').MongoClient;
 // Custom
 var config = require('./config');
-var crawler = require('./crawlers/xmlCrawler');
+var shared = require('./methods/shared');
 var journalSettings = config.journalSettings;
+var xmlCrawler = require('./crawlers/xmlCrawler');
+var ncbi = require('./methods/ncbi');
+var production = require('./production');
 
 var app = express();
 
@@ -140,13 +143,70 @@ app.get('/crawl_xml/:journalname/', function(req, res) {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	var journalName = req.params.journalname;
 	// console.log('.. crawl : ' + journalName);
-	crawler.batchByJournal(journalName, function(crawlXmlErr, crawlXmlRes) {
+	xmlCrawler.batchByJournal(journalName, function(crawlXmlErr, crawlXmlRes) {
 		if(crawlXmlErr) {
 			console.log('ERROR:');
 			res.send(JSON.stringify(crawlXmlErr));
 		} else {
 			// console.log('crawlXmlRes');console.log(crawlXmlRes);
 			res.send(JSON.stringify(crawlXmlRes));
+		}
+	});
+});
+
+// Get PMID/Title pair bia PubMed
+app.get('/titles/:journalname', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	var journalName = req.params.journalname;
+	console.log('.. crawl : ' + journalName);
+	ncbi.allArticlesTitleAndPMID(journalName, journalSettings, function(titlesErr, pmidAndTitles) {
+		if(titlesErr) {
+			console.error('ERROR:');
+			res.send(JSON.stringify(titlesErr));
+		}
+		if(pmidAndTitles){
+			res.send(JSON.stringify(pmidAndTitles));
+		}
+	});
+});
+
+// for when PubMed XML does not contain PII, use the production DB to get PII/title and use PubMed to get PMID/title.
+// Matched PII/PMID will be pushed to an array. Then this will be used to create the output pairs file.
+// Unmatched PMID are logged in the console
+app.get('/pmid_pii_pairs/:journalname', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	var journalName = req.params.journalname;
+	console.log('.. crawl : ' + journalName);
+	ncbi.allArticlesTitleAndPMID(journalName, journalSettings, function(titlesErr, pmidAndTitles) {
+		if(titlesErr) {
+			console.error('ERROR:');
+			res.send(JSON.stringify(titlesErr));
+		}
+		if(pmidAndTitles){
+			// console.log('crawlXmlRes');console.log(crawlXmlRes);
+			// res.send(JSON.stringify(titles));
+			production.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
+				if(mysqlErr){
+					console.error('ERROR');
+					console.error(mysqlErr);
+				}
+				if(productionArticles){
+					// console.log('production articles count = ' + productionArticles.length);
+					// console.log(productionArticles);
+					// now we have PII/title via production AND PMID/title from PubMed. Now compare titles and create pairs file
+					// loop throug PubMed array, because this will have less than production DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
+					shared.matchPmidAndPii(pmidAndTitles,productionArticles,journalName,function(matchError,matched){
+						if(matchError){
+							console.error(matchError);
+						}
+						if(matched){
+							res.send(matched);
+						}
+					})
+				}
+			})
 		}
 	});
 });
