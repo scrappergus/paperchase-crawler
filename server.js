@@ -11,9 +11,9 @@ var xmlCrawler = require('./crawlers/xmlCrawler');
 var ncbi = require('./methods/ncbi');
 var production = require('./production');
 var paperchase = require('./methods/paperchase');
+var crossRef = require('./methods/crossRef');
 
 var app = express();
-
 app.use(express.static('public'));
 
 function mongo_query(journal, collection_name, query, cb) {
@@ -154,6 +154,58 @@ app.get('/crawl_xml/:journalname/', function(req, res) {
 		}
 	});
 });
+
+// DOI Status - for all articles in journal
+app.get('/doi_status/:journalname/', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	var journalName = req.params.journalname;
+	console.log('...fetching status for : ' + journalName);
+	var journalPiiList = paperchase.allArticlesPii(journalName, function(articlesError, articles) {
+		if(articlesError){
+			console.error(articlesError);
+			res.send('ERROR : ' + JSON.stringify(articlesError));
+		}
+		if(articles){
+			// PII is stored as a string in the DB. Because some IDs have characters, for ex PMC ID
+			// parse to integer for sorting when pusing to piiList
+			var piiList = [];
+			var missingPii = [];
+			for(var a=0; a<articles.length ; a++){
+				if(articles[a]['ids']['pii']){
+					piiList.push(parseInt(articles[a]['ids']['pii']));
+					// doiUrlList.push('http://dx.doi.org/' + config.journalSettings[journalName]['doi'] + articles[a]['ids']['pii']);
+				}else{
+					missingPii.push(articles[a]['_id']);
+				}
+			}
+
+			piiList = piiList.sort(function(a, b) {
+				return a - b;
+			});
+			crossRef.allArticlesCheck(journalName,piiList,function(e,r){
+				if(e){
+					console.error(e);
+					res.send('ERROR: ' + JSON.stringify(e));
+				}
+				if(r){
+					var resString = '';
+					// console.log(r.length);
+					for(var article = 0; article < r.length ; article++){
+						// console.log(article);
+						resString += r[article]['doi'] + ': ' + r[article]['registered'];
+						resString += '\n';
+						// console.log(resString);
+						if(article == parseInt(r.length - 1)){
+							res.send(resString);
+						}
+					}
+				}
+			});
+		}
+	});
+});
+
 
 // Get PMID/Title pair bia PubMed
 app.get('/titles/:journalname', function(req, res) {

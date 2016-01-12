@@ -13,7 +13,7 @@ paperchase.articleCount = function(journal,cb){
 	MongoClient.connect(journalDb, function(db_err, db) {
 		if(db_err) { cb(db_err); return; }
 		var coll = db.collection('articles');
-		coll.find({}, function(find_err, cursor){
+		coll.find({}, {ids:1}, function(find_err, cursor){
 			cursor.toArray(function (arr_err, arr){
 				cb(arr_err, arr.length);
 				db.close();
@@ -40,6 +40,21 @@ paperchase.insertArticle = function (articleData,journal,cb) {
 			if(docs){
 				cb(false, docs.insertedCount);
 			}
+		});
+	});
+}
+
+paperchase.allArticlesPii = function(journal,cb){
+	var journalDb = journalSettings[journal].dbUrl;
+	MongoClient.connect(journalDb, function(db_err, db) {
+		if(db_err) { cb(db_err); return; }
+		var coll = db.collection('articles');
+		coll.find({}, function(find_err, cursor){
+			cursor.sort({'ids.pii':1});
+			cursor.toArray(function (arr_err, arr){
+				cb(arr_err, arr);
+				db.close();
+			});
 		});
 	});
 }
