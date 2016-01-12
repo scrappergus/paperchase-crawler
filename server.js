@@ -189,17 +189,7 @@ app.get('/doi_status/:journalname/', function(req, res) {
 					res.send('ERROR: ' + JSON.stringify(e));
 				}
 				if(r){
-					var resString = '';
-					// console.log(r.length);
-					for(var article = 0; article < r.length ; article++){
-						// console.log(article);
-						resString += r[article]['doi'] + ': ' + r[article]['registered'];
-						resString += '\n';
-						// console.log(resString);
-						if(article == parseInt(r.length - 1)){
-							res.send(resString);
-						}
-					}
+					res.send(r);
 				}
 			});
 		}
