@@ -7,7 +7,7 @@ var ncbi = {
 		// via PubMed
 		// console.log('... get_pmid_list_for_issn : ' + issn);
 		var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
-		// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=10"; // for testing locally, smaller response
+		// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=1"; // for testing locally, smaller response
 		request(pmidListUrl, function(err, res, body){
 			if(err) {
 				cb(err);
@@ -55,8 +55,7 @@ var ncbi = {
 
 					ncbi.getTitleByPMID(pmid, function(articleTitleError, articleTitle){
 						if(articleTitleError) {
-							console.log('     ERROR');
-							console.error(articleTitleError);
+							console.error('ERROR', articleTitleError);
 							map_cb();
 						}
 						if(articleTitle){
@@ -69,8 +68,7 @@ var ncbi = {
 					});
 				}, function(err, articles){
 					if(err) {
-						console.log('     ERROR:');
-						console.log(err);
+						console.error('ERROR',err);
 						cbBatch(err);
 					} else {
 						// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
