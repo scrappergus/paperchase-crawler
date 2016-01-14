@@ -214,6 +214,24 @@ app.get('/titles/:journalname', function(req, res) {
 	});
 });
 
+
+app.get('/article_count/:journalname', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	var journalName = req.params.journalname;
+	console.log('.. article_count : ' + journalName);
+	paperchase.articleCount(journalName, function(countErr, count) {
+		if(countErr) {
+			console.error('ERROR:');
+			res.sendStatus(JSON.stringify(countErr));
+		}
+		if(count){
+			res.sendStatus(count,200);
+		}
+	});
+});
+
+
 // for when PubMed XML does not contain PII, use the production DB to get PII/title and use PubMed to get PMID/title.
 // Matched PII/PMID will be pushed to an array. Then this will be used to create the output pairs file.
 // Unmatched PMID are logged in the console
@@ -308,16 +326,16 @@ app.get('/initiate_journal_db/:journalname',function(req, res) {
 							paperchase.articleCount(journalName,function(articleCountError,articleCount){
 								if(articleCountError){
 									console.error(articleCountError)
-									res.send('Error. Could not count articles.');
+									res.send('Could not count articles. Error:' + articleCountError.message);
 								}
 								if(articleCount == 0 ){
-									paperchase.insertArticle(dbUpdate,journalName,function(mongoLabError,mongoLabResult){
-										if(mongoLabError){
-											console.error(mongoLabError);
-											res.send('Error. Could not insert articles.');
+									paperchase.insertArticle(dbUpdate,journalName,function(insertArticlesError,articlesInsertedCount){
+										if(insertArticlesError){
+											console.error(insertArticlesError);
+											res.send('Could not insert articles. Error: ' + insertArticlesError.message);
 										}
-										if(mongoLabResult){
-											res.send(mongoLabResult + ' Articles added to the database');
+										if(articlesInsertedCount){
+											res.send(articlesInsertedCount + ' Articles added to the database');
 										}
 									});
 								}else{
