@@ -27,8 +27,10 @@ crossRef.registered = function(doiUrl, cb){
 	// var journal = 'oncoscience';
 	// var doiUrl = 'http://dx.doi.org/' + config.journalSettings[journal]['doi'] + pii;
 	// console.log('            ' + doiUrl);
+	var doiPieces = doiUrl.split('.');
 	var article = {
-		doi : doiUrl
+		doi : doiUrl,
+		pii : doiPieces[parseInt(doiPieces.length - 1)]
 	}
 	var error = false;
 	var connectionRefused = false;
