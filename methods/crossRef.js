@@ -11,7 +11,7 @@ crossRef.doiUrl = function(pii,journalName){
 crossRef.allArticlesCheck = function(journalName,articles,cb){
 	var doiUrlList = [];
 	for(var a=0; a<articles.length ; a++){
-		doiUrlList.push(crossRef.doiUrl(pii,journalName));
+		doiUrlList.push(crossRef.doiUrl(articles[a],journalName));
 	}
 	async.map(doiUrlList, crossRef.registered, function(err, registered) {
 		if(err){
@@ -51,7 +51,6 @@ crossRef.registered = function(doiUrl, cb){
 		}else if(res && res.statusCode == '200'){
 			article.registered = 'Registered';
 			var responseJson = JSON.parse(res.body);
-			console.log(responseJson);
 			responseJson = responseJson.message;
 			article.indexed_date = responseJson.indexed.timestamp;
 			article.volume = responseJson.volume;
