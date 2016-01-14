@@ -5,7 +5,6 @@ var shared = require('../methods/shared');
 var fs = require('fs');
 var s3 = require('s3');
 var async = require('async');
-var request = require('request');
 var MongoClient = require('mongodb').MongoClient;
 var xml2js = require('xml2js');
 var request = require('request');
@@ -148,16 +147,18 @@ function get_and_save_article_xml(journal, pmid, cb) {
 					console.log('    XML: ' + full_xml_url);
 					get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
 						async.series([
+							// function(scb) {
+							// 	// Upload Abstract XML
+							// 	// upload_xml_string_as_file_to_s3(journal, abstract_xml_body, abstractXmlFilename, scb);
+							// },
 							function(scb) {
-								// Upload Abstract XML
-								upload_xml_string_as_file_to_s3(journal, abstract_xml_body, abstractXmlFilename, scb);
-							},
-							function(scb) {
+								console.log('    upload: ' + fullTextXmlFilename);
 								// Upload Full Text XML
 								upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
 							}
 						],function(series_err, series_res){
 							if(series_err) {
+								console.error(series_err);
 								cb(series_err);
 							} else {
 								var pair = {
@@ -165,7 +166,7 @@ function get_and_save_article_xml(journal, pmid, cb) {
 									abstract_xml_url: series_res[0],
 									full_xml_url: series_res[1]
 								};
-								console.log('Upload success!');
+								console.log('    Upload success!');
 								// console.log(pair);
 								cb(null, pair);
 							}
@@ -189,41 +190,49 @@ function get_and_save_article_xml(journal, pmid, cb) {
 
 module.exports = {
 	batchByJournal: function(journal,cbBatch){
+		// This will just batch save the XML to S3. It will NOT update the Paperchase DB.
 		var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
 		MongoClient.connect(journalDb, function(err, db) {
-			var dbCollection = db.collection('xml');
-			ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
-				console.log('     Article Count: ' + list.length);
-				// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
-				async.mapSeries(list, function(pmid, map_cb){
-					console.log('---- PMID: ' + pmid);
-					// Using PMID, retrieve abstract XML from PubMed and PMC ID, then if PMC ID retrieve full text XML
-					get_and_save_article_xml(journal, pmid, function(articleXmlErr, articleXmlRes){
-						if(articleXmlErr) {
-							console.log('     ERROR');
-							console.error(articleXmlErr);
-							map_cb();
-						}else{
-							// console.log('articleXmlRes');console.log(articleXmlRes);
-							map_cb(null, articleXmlRes);
+			if(err) {
+				console.error('Mongo DB connection Error');
+				cb(err);
+				return;
+			}else{
+				// var dbCollection = db.collection('xml');
+				ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
+					console.log('     Article Count: ' + list.length);
+					// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
+					async.mapSeries(list, function(pmid, map_cb){
+						console.log('---- PMID: ' + pmid);
+						// Using PMID, retrieve abstract XML from PubMed and PMC ID, then if PMC ID retrieve full text XML
+						get_and_save_article_xml(journal, pmid, function(articleXmlErr, articleXmlRes){
+							if(articleXmlErr) {
+								console.log('     ERROR');
+								console.error(articleXmlErr);
+								map_cb();
+							}else{
+								// console.log('articleXmlRes');console.log(articleXmlRes);
+								map_cb(null, articleXmlRes);
+							}
+						});
+					}, function(err, articlesXmlList){
+						if(err) {
+							console.log('     ERROR:');
+							console.log(err);
+							cbBatch(err);
+						} else {
+							// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
+							// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
+							articlesXmlList = shared.removeEmptyFromArray(articlesXmlList);
+							console.log('articlesXmlList');
+							console.log(articlesXmlList);
+							cbBatch(null, articlesXmlList); // remove empty before returning to Paperchase
 						}
 					});
-				}, function(err, articlesXmlList){
-					if(err) {
-						console.log('     ERROR:');
-						console.log(err);
-						cbBatch(err);
-					} else {
-						// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
-						// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
-						articlesXmlList = shared.removeEmptyFromArray(articlesXmlList);
-						console.log('articlesXmlList');
-						console.log(articlesXmlList);
-						cbBatch(null, articlesXmlList); // remove empty before returning to Paperchase
-					}
 				});
-			});
+			}
+			db.close();
 		});
 	}
 }
