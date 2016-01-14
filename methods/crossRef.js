@@ -55,7 +55,7 @@ crossRef.registered = function(doiUrl, cb){
 			article.indexed_date = responseJson.indexed.timestamp;
 			article.volume = responseJson.volume;
 			article.deposited = responseJson.deposited;
-			article.article_date = responseJson['published-online']['date-parts'][0];
+			article.article_date = responseJson['published-online']['date-parts'][0].join('-');
 		}else{
 			article.registered = 'Cannot determine';
 			console.error(doiUrl, 'Cannot determine if registered');
