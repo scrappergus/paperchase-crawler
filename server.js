@@ -155,7 +155,7 @@ app.get('/crawl_xml/:journalname/', function(req, res) {
 	});
 });
 
-// DOI Status - for all articles in journal
+// DOI Status - for ALL articles in journal
 app.get('/doi_status/:journalname/', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader("Access-Control-Allow-Origin", "*");
@@ -194,6 +194,25 @@ app.get('/doi_status/:journalname/', function(req, res) {
 			});
 		}
 	});
+});
+
+// Article
+// ------------------------
+// DOI Status - per article
+app.get('/article/:journalname/:pii/doi_status', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	var pii = req.params.pii;
+	var doiUrl = crossRef.doiUrl(pii,journalName);
+	crossRef.registered(doiUrl,function(error,result){
+		if(error){
+			console.error(error);
+			res.send(error);
+		}else if(result){
+			res.send(result);
+		}
+	})
 });
 
 

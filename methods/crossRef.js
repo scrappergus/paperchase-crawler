@@ -4,28 +4,29 @@ var async = require('async');
 var http = require('http-request'); // more error info than request
 var crossRef = {};
 
+crossRef.doiUrl = function(pii,journalName){
+	return 'http://dx.doi.org/' + config.journalSettings[journalName]['doi'] + pii;
+}
+
 crossRef.allArticlesCheck = function(journalName,articles,cb){
-			var doiUrlList = [];
-			for(var a=0; a<articles.length ; a++){
-				doiUrlList.push('http://dx.doi.org/' + config.journalSettings[journalName]['doi'] + articles[a]);
-			}
-			async.map(doiUrlList, crossRef.registered, function(err, registered) {
-				if(err){
-					console.error(err);
-					cb(true,'Could not check articles');
-				}
-				if (registered) {
+	var doiUrlList = [];
+	for(var a=0; a<articles.length ; a++){
+		doiUrlList.push(crossRef.doiUrl(pii,journalName));
+	}
+	async.map(doiUrlList, crossRef.registered, function(err, registered) {
+		if(err){
+			console.error(err);
+			cb(true,'Could not check articles');
+		}else if (registered) {
 					// console.log('DONE');
 					// res.send(registered);
-					cb(null,registered);
-				}
-			});
+			cb(null,registered);
+		}
+	});
 }
 
 crossRef.registered = function(doiUrl, cb){
 	// console.log('registered? ' + doiUrl);
-	// var journal = 'oncoscience';
-	// var doiUrl = 'http://dx.doi.org/' + config.journalSettings[journal]['doi'] + pii;
 	// console.log('            ' + doiUrl);
 	var doiPieces = doiUrl.split('.');
 	var article = {
