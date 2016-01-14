@@ -1,5 +1,5 @@
 var config = require('../config');
-// var request = require('request');
+var request = require('request');
 var async = require('async');
 var http = require('http-request'); // more error info than request
 var crossRef = {};
@@ -15,11 +15,9 @@ crossRef.allArticlesCheck = function(journalName,articles,cb){
 	}
 	async.map(doiUrlList, crossRef.registered, function(err, registered) {
 		if(err){
-			console.error(err);
+			console.error('doiUrlList', err);
 			cb(true,'Could not check articles');
 		}else if (registered) {
-					// console.log('DONE');
-					// res.send(registered);
 			cb(null,registered);
 		}
 	});
@@ -27,43 +25,40 @@ crossRef.allArticlesCheck = function(journalName,articles,cb){
 
 crossRef.registered = function(doiUrl, cb){
 	// console.log('registered? ' + doiUrl);
-	// console.log('            ' + doiUrl);
 	var doiPieces = doiUrl.split('.');
+	doiUrl = doiUrl.replace('http://dx.doi.org/','');
 	var article = {
 		doi : doiUrl,
 		pii : doiPieces[parseInt(doiPieces.length - 1)]
 	}
 	var error = false;
 	var connectionRefused = false;
-	// setTimeout(function(){
-	http.get(doiUrl, function(err, res){
+	request.get('http://api.crossref.org/works/' + doiUrl, function(err, res){
 		// console.log('-------------------------------------'+doiUrl);
-		if(err && err.code == '404'){
+		if(err && res.statusCode == '404'){
 			// DOI is not registered
 			article.registered = false;
-			// cb(null, article);
-			// console.log('error');
-		}else if(err && err.code == 'ECONNREFUSED'){
-			// could be that the connection was refused at publisher server, but we can still tell if the DOI was registered via header
-			// console.error(doiUrl, err);
-			// console.log('maybe');
+		}else if(err && err.statusCode == 'ECONNREFUSED'){
 			article.registered = 'Maybe. Connection to server refused';
 			connectionRefused = true;
 			error = true;
-			// cb(null, article);
+		}else if(res.statusCode == '404'){
+			article.registered = false;
 		}else if(err){
-			// console.log('ERROR');
 			console.error(doiUrl, err);
 			error = true;
 			article.registered = 'Cannot determine. Error while checking: ' + err.code;
-			// cb(null, article);
-		}else if(res && res.code == '200'){
-			// console.log('Yes');
+		}else if(res && res.statusCode == '200'){
 			article.registered = 'Registered';
-			// cb(null, article); // DOI is regirested and we got redirected to publisher site
+			var responseJson = JSON.parse(res.body);
+			console.log(responseJson);
+			responseJson = responseJson.message;
+			article.indexed_date = responseJson.indexed.timestamp;
+			article.volume = responseJson.volume;
+			article.deposited = responseJson.deposited;
+			article.article_date = responseJson['published-online']['date-parts'][0];
 		}else{
 			article.registered = 'Cannot determine';
-			// cb(null, article);
 			console.error(doiUrl, 'Cannot determine if registered');
 		}
 		if(connectionRefused){
@@ -81,7 +76,6 @@ crossRef.registered = function(doiUrl, cb){
 		}
 
 	});
-	// }, 3000);
 }
 
 module.exports = crossRef;
