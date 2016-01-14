@@ -12,48 +12,52 @@ var journalSettings = config.journalSettings;
 var paperchase = {};
 
 paperchase.articleCount = function(journal,cb){
-	console.log('...articleCount : ' + journal);
 	var dbUrl = journalSettings[journal].dbUrl;
-	var dbName = journalSettings[journal]['mongo']['name'];
-	var dbUser = journalSettings[journal]['mongo']['user'];
-	var dbPw = journalSettings[journal]['mongo']['password'];
-	var dbServer = journalSettings[journal]['mongo']['server'];
-	var dbPort= journalSettings[journal]['mongo']['port'];
-	var dbServer = journalSettings[journal]['mongo']['server'];
+	if(config.live){
+		console.log('...articleCount : ' + journal);
+		var dbName = journalSettings[journal]['mongo']['name'];
+		var dbUser = journalSettings[journal]['mongo']['user'];
+		var dbPw = journalSettings[journal]['mongo']['password'];
+		var dbServer = journalSettings[journal]['mongo']['server'];
+		var dbPort= journalSettings[journal]['mongo']['port'];
+		var dbServer = journalSettings[journal]['mongo']['server'];
 
-	var db = new Db(dbName, new Server(dbServer, dbPort));
-	// Establish connection to db
-	db.open(function(err, db) {
-	    // assert.equal(null, err);
-	    if(err){
-	    	console.error(err);
-	    }else{
-	      // Authenticate
-			db.authenticate(dbUser, dbPw, function(err, result) {
-				if(result){
-					// console.log('USER authenticated');
-					var articleCount = 0 ;
-					db.collection('articles').find({},{_id:1}).toArray(function(articlesCountErr, articles){
-						// do something with items
-						if(articlesCountErr){
-							console.log(articlesCountErr);
-							cb(articlesCountErr);
-						}
-						if(articles){
-							// console.log('articles');console.log(articles);
-							cb(null,articles.length);
-						}
-					});
-				}
-			});
-	    }
-	});
+		var db = new Db(dbName, new Server(dbServer, dbPort));
+		// Establish connection to db
+		db.open(function(err, db) {
+		    // assert.equal(null, err);
+		    if(err){
+		    	console.error('DB connection ERROR',err);
+		    }else{
+		      // Authenticate
+				db.authenticate(dbUser, dbPw, function(authenticateErr, authenticated) {
+					if(authenticateErr){
+						console.error('DB authenticate ERROR',authenticateErr);
+					}else if(authenticated){
+						// console.log('USER authenticated');
+						var articleCount = 0 ;
+						db.collection('articles').find({},{_id:1}).toArray(function(articlesCountErr, articles){
+							// do something with items
+							if(articlesCountErr){
+								console.error('Article Count ERROR',articlesCountErr);
+								cb(articlesCountErr);
+							}else if(articles){
+								cb(null,articles);
+							}
+						});
+					}
+				});
+		    }
+		});
+	}else{
+		cb(false, 0);//local env
+	}
 }
 
 paperchase.insertArticle = function (articleData,journal,cb) {
+	// console.log('..insertArticle');
 	// can do multiple at once.
 	var journalDb = journalSettings[journal].dbUrl;
-	console.log(journalDb);
 	MongoClient.connect(journalDb, function(db_err, db) {
 		if(db_err) {
 			console.error(db_err);
@@ -73,6 +77,7 @@ paperchase.insertArticle = function (articleData,journal,cb) {
 		db.close();
 	});
 }
+
 
 paperchase.allArticlesPii = function(journal,cb){
 	console.log('...allArticlesPii ' + journal);
