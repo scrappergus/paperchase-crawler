@@ -42,7 +42,7 @@ crossRef.registered = function(doiUrl, cb){
 			// console.log('error');
 		}else if(err && err.code == 'ECONNREFUSED'){
 			// could be that the connection was refused at publisher server, but we can still tell if the DOI was registered via header
-			console.error(doiUrl, err);
+			// console.error(doiUrl, err);
 			// console.log('maybe');
 			article.registered = 'Maybe. Connection to server refused';
 			connectionRefused = true;
@@ -68,8 +68,7 @@ crossRef.registered = function(doiUrl, cb){
 			crossRef.registered(doiUrl,cb,function(e,r){
 				if(e){
 
-				}
-				if(r){
+				}else if(r){
 					connectionRefused = false;
 					article = r;
 				}
