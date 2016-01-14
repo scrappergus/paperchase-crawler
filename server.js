@@ -146,7 +146,7 @@ app.get('/crawl_xml/:journalname/', function(req, res) {
 	// console.log('.. crawl : ' + journalName);
 	xmlCrawler.batchByJournal(journalName, function(crawlXmlErr, crawlXmlRes) {
 		if(crawlXmlErr) {
-			console.log('ERROR:');
+			console.error('ERROR',crawlXmlErr);
 			res.send(JSON.stringify(crawlXmlErr));
 		} else {
 			// console.log('crawlXmlRes');console.log(crawlXmlRes);
@@ -305,29 +305,22 @@ app.get('/initiate_journal_db/:journalname',function(req, res) {
 	console.log('.. initiate DB : ' + journalName);
 	ncbi.allArticlesTitleAndPMID(journalName, journalSettings, function(titlesErr, pmidAndTitles) {
 		if(titlesErr) {
-			console.error('ERROR:');
+			console.error('ERROR',titlesErr);
 			res.send(JSON.stringify(titlesErr));
-		}
-		if(pmidAndTitles){
-			// console.log('crawlXmlRes');console.log(crawlXmlRes);
-			// res.send(JSON.stringify(titles));
+		}else if(pmidAndTitles){
 			production.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
 				if(mysqlErr){
-					console.error('ERROR');
-					console.error(mysqlErr);
+					console.error('MySQL ERROR',mysqlErr);
 					res.send('Error. Could not get articles in production database.');
 				}
 				if(productionArticles){
-					// console.log('production articles count = ' + productionArticles.length);
-					// console.log(productionArticles);
 					// now we have PII/title via production AND PMID/title from PubMed. Now compare titles and create pairs file
 					// loop throug PubMed array, because this will have less than production DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
-					shared.matchPmidAndPii(pmidAndTitles,productionArticles,journalName,function(matchError,piiPmidPairs){
+					shared.matchPmidAndPii(pmidAndTitles,productionArticles,journalName,function(matchError,piiPmidPairs,unmatched){
 						if(matchError){
-							console.error(matchError);
+							console.error('matchError: PII/PMID', matchError);
 							res.send('Error. Could not insert articles.');
-						}
-						if(piiPmidPairs){
+						}else if(piiPmidPairs){
 							// insert into MongoLab DB
 							var dbUpdate = [];
 							for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
@@ -344,26 +337,28 @@ app.get('/initiate_journal_db/:journalname',function(req, res) {
 							// no check for article DOC exists, so since this is a batch insert to initiate verify that the collection is empty
 							paperchase.articleCount(journalName,function(articleCountError,articleCount){
 								if(articleCountError){
-									console.error(articleCountError)
+									console.error('articleCount',articleCountError)
 									res.send('Could not count articles. Error:' + articleCountError.message);
-								}
-								if(articleCount == 0 ){
-									paperchase.insertArticle(dbUpdate,journalName,function(insertArticlesError,articlesInsertedCount){
+								}else if(articleCount == 0 ){
+									// only initiate DB if 0 articles
+									paperchase.insertArticle(dbUpdate,journalName,function(insertArticlesError,articlesInserted){
 										if(insertArticlesError){
-											console.error(insertArticlesError);
+											console.error('insertArticlesError',insertArticlesError);
 											res.send('Could not insert articles. Error: ' + insertArticlesError.message);
-										}
-										if(articlesInsertedCount){
-											res.send(articlesInsertedCount + ' Articles added to the database');
+										}else if(articlesInserted){
+											if(unmatched){
+												res.send('Done initiating DB. ' + articlesInserted.length + 'inserted. UNMATCHED: ' + JSON.stringify(unmatched));
+											}else{
+												res.send('Done initiating DB. ' + articlesInserted.length + 'inserted.');
+											}
 										}
 									});
 								}else{
 									res.send('Error. Cannot batch insert. There are already articles in the database');
 								}
-							})
-
-
-
+							});
+						}else if(unmatched){
+							res.send('UNMATCHED: ' + JSON.stringify(unmatched));
 						}
 					})
 				}
