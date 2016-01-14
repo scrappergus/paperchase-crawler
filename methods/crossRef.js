@@ -26,11 +26,11 @@ crossRef.allArticlesCheck = function(journalName,articles,cb){
 crossRef.registered = function(doiUrl, cb){
 	// console.log('registered? ' + doiUrl);
 	var doiPieces = doiUrl.split('.');
-	doiUrl = doiUrl.replace('http://dx.doi.org/','');
 	var article = {
 		doi : doiUrl,
 		pii : doiPieces[parseInt(doiPieces.length - 1)]
 	}
+	doiUrl = doiUrl.replace('http://dx.doi.org/','');
 	var error = false;
 	var connectionRefused = false;
 	request.get('http://api.crossref.org/works/' + doiUrl, function(err, res){
