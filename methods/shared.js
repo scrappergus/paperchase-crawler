@@ -19,7 +19,7 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 		// console.log(articleIdx);
 		var articlePmid = pmidAndTitles[articleIdx]['pmid'];
 		var articleTitlePubMed = pmidAndTitles[articleIdx]['title'].replace(/(\r\n|\n|\r)/gm,' ').replace(/\./g,' ').replace(/ /g,''); // PubMed ends title with punctuation
-		console.log(articlePmid);
+		// console.log(articlePmid);
 		var articlePairsObject = {
 			pmid :  articlePmid,
 			title: pmidAndTitles[articleIdx]['title']
@@ -45,9 +45,9 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 		if(articleIdx == parseInt(pmidAndTitles.length-1)){
 			// console.log(piiPmidPairs);
 			// res.send(piiPmidPairs);
-			console.log(unmatched);
+			// console.log(unmatched);
 			// res.send(pairsFile);
-			cb(null,piiPmidPairs);
+			cb(null,piiPmidPairs,unmatched);
 		}
 	}
 }
