@@ -128,4 +128,82 @@ paperchase.allArticlesPii = function(journal,cb){
 	});
 }
 
+paperchase.articlePiiViaPmid = function(pmid,journal,cb){
+	console.log('...articlePiiViaPmid ' + journal);
+	var dbUrl = journalSettings[journal].dbUrl;
+	var dbName = journalSettings[journal]['mongo']['name'];
+	var dbUser = journalSettings[journal]['mongo']['user'];
+	var dbPw = journalSettings[journal]['mongo']['password'];
+	var dbServer = journalSettings[journal]['mongo']['server'];
+	var dbPort= journalSettings[journal]['mongo']['port'];
+	var dbServer = journalSettings[journal]['mongo']['server'];
+
+	var db = new Db(dbName, new Server(dbServer, dbPort));
+	// Establish connection to db
+	db.open(function(err, db) {
+	    if(err){
+	    	console.error('DB Connection ERROR. Could not get list of PII in journal',err);
+			cb(err);
+	    }else{
+	      // Authenticate
+			db.authenticate(dbUser, dbPw, function(authenticateError, userAuthenticated) {
+				if(authenticateError){
+					console.error(authenticateError);
+				}else if(userAuthenticated){
+					var articleCount = 0 ;
+					db.collection('articles').findOne({'ids.pmid' : 'pmid'},function(findError,findResult){
+						if(findError){
+							console.error('findError', findError);
+							cb(findError);
+						}else if(findResult){
+							console.log(findResult);
+							if(findResult.ids.pii){
+								cb(null,findResult.ids.pii);
+							}else{
+								cb(null,null);
+							}
+						}
+					})
+				}
+			});
+	    }
+	});
+}
+paperchase.articleUpdateViaPmid = function(pmid, updateObj, journal,cb){
+	console.log('...articleUpdateViaPmid ' + pmid);
+	var dbUrl = journalSettings[journal].dbUrl;
+	var dbName = journalSettings[journal]['mongo']['name'];
+	var dbUser = journalSettings[journal]['mongo']['user'];
+	var dbPw = journalSettings[journal]['mongo']['password'];
+	var dbServer = journalSettings[journal]['mongo']['server'];
+	var dbPort= journalSettings[journal]['mongo']['port'];
+	var dbServer = journalSettings[journal]['mongo']['server'];
+
+	var db = new Db(dbName, new Server(dbServer, dbPort));
+	// Establish connection to db
+	db.open(function(err, db) {
+	    if(err){
+	    	console.error('DB Connection ERROR. Could not get list of PII in journal',err);
+			cb(err);
+	    }else{
+	      // Authenticate
+			db.authenticate(dbUser, dbPw, function(authenticateError, userAuthenticated) {
+				if(authenticateError){
+					console.error('User not authenticated',authenticateError);
+				}else if(userAuthenticated){
+					db.collection('articles').update({'ids.pmid' : 'pmid'}, updateObj,function(updateError,updated){
+						if(updateError){
+							console.error('updateError : ' + pmid, updateError);
+							cb(findError);
+						}else if(updated){
+							console.log('updated PMID ' + pmid);
+							cb(null,updated);
+						}
+					})
+				}
+			});
+	    }
+	});
+}
+
 module.exports = paperchase;
