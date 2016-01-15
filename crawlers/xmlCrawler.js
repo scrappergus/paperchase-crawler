@@ -84,7 +84,7 @@ function upload_xml_string_as_file_to_s3(journal, xml_string, xml_filename, cb) 
 			});
 			uploader.on('progress', function() {
 				// console.log('.....'+xml_filename+' progress:', uploader.progressTotal);
-				console.log('..... '+xml_filename+' progress:', Math.round(uploader.progressAmount / uploader.progressTotal * 100) + '% done');
+				// console.log('..... '+xml_filename+' progress:', Math.round(uploader.progressAmount / uploader.progressTotal * 100) + '% done');
 			});
 			uploader.on('end', function() {
 				var s3url = s3.getPublicUrlHttp(bucket, xml_filename);
@@ -127,7 +127,7 @@ function get_and_save_article_xml(journal, pmid, cb) {
 	var abstract_xml_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pubmed&report=xml&id="+pmid;
 	// Use the PMID to then get the PMC ID, which will then be used below to get the Full Text XML from PMC
 	// Get XML containing article IDs (and abstract)
-	console.log('     Abstract: ' + abstract_xml_url);
+	// console.log('     Abstract: ' + abstract_xml_url);
 	get_xml_string_from_url(abstract_xml_url, function(abstract_xml_err, abstract_xml_body){
 		if(abstract_xml_err) {
 			cb(abstract_xml_err);
@@ -138,40 +138,46 @@ function get_and_save_article_xml(journal, pmid, cb) {
 					console.error('    ERROR');
 					console.error(idList_err);
 					cb(idList_err);
-				}else if(idList.pmc && idList.pii){
-					console.log(JSON.stringify(idList));
-					// PMC ID and PII exist, now query PMC to get Full Text XML
-					// XML full text filename based on PII.
-					var fullTextXmlFilename = idList.pii + '.xml';
-					var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + idList.pmc;
-					console.log('    XML: ' + full_xml_url);
-					get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
-						async.series([
-							// function(scb) {
-							// 	// Upload Abstract XML
-							// 	// upload_xml_string_as_file_to_s3(journal, abstract_xml_body, abstractXmlFilename, scb);
-							// },
-							function(scb) {
-								console.log('    upload: ' + fullTextXmlFilename);
-								// Upload Full Text XML
-								upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
-							}
-						],function(series_err, series_res){
-							if(series_err) {
-								console.error(series_err);
-								cb(series_err);
-							} else {
-								var pair = {
-									ids: idList,
-									abstract_xml_url: series_res[0],
-									full_xml_url: series_res[1]
-								};
-								console.log('    Upload success!');
-								// console.log(pair);
-								cb(null, pair);
-							}
+				}else if(idList.pmc){
+					if(!idList.pii){
+						// query using PMID for PII in DB
+						idList.pii = paperchase.articlePiiViaPmid(pmid);
+					}
+					if(idList.pii){
+						// PMC ID and PII exist, now query PMC to get Full Text XML
+						// XML full text filename based on PII.
+						var fullTextXmlFilename = idList.pii + '.xml';
+						console.log('     Upload: ' + fullTextXmlFilename);
+						var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + idList.pmc;
+						// console.log('    XML: ' + full_xml_url);
+						get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
+							async.series([
+								// function(scb) {
+								// 	// Upload Abstract XML
+								// 	// upload_xml_string_as_file_to_s3(journal, abstract_xml_body, abstractXmlFilename, scb);
+								// },
+								function(scb) {
+
+									// Upload Full Text XML
+									upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
+								}
+							],function(series_err, series_res){
+								if(series_err) {
+									console.error(series_err);
+									cb(series_err);
+								} else {
+									var pair = {
+										ids: idList,
+										abstract_xml_url: series_res[0],
+										full_xml_url: series_res[1]
+									};
+									console.log('     Upload success!');
+									// console.log(pair);
+									cb(null, pair);
+								}
+							});
 						});
-					});
+					}
 				}else if(idList.pmc && !idList.pii){
 					cb('     MISSING PII: PMC ID = ' + idList.pmc);
 					// console.log(JSON.stringify(idList));
