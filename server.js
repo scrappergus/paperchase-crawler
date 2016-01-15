@@ -344,9 +344,9 @@ app.get('/pmid_pii_pairs/:journalname', function(req, res) {
 	// });
 // });
 
-// for getting PMID, PII, title into MongoLab DB
-// the rest of the data is process in paperchase via articleMethods.processXML
-app.get('/initiate_journal_db/:journalname',function(req, res) {
+// for getting PMID, PII, title into MongoLab DB. Sends to Paperchase to insert so that _id has same type. Via shell _id is Object. Via Mongo default is strig.
+// the rest of the data is process in Paperchase via articleMethods.processXML
+app.get('/initiate_articles_collection/:journalname',function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	var journalName = req.params.journalname;
@@ -383,30 +383,7 @@ app.get('/initiate_journal_db/:journalname',function(req, res) {
 									title : piiPmidPairs[matched]['title']
 								})
 							}
-
-							// no check for article DOC exists, so since this is a batch insert to initiate verify that the collection is empty
-							paperchase.articleCount(journalName,function(articleCountError,articleCount){
-								if(articleCountError){
-									console.error('articleCount',articleCountError)
-									res.send('Could not count articles. Error:' + articleCountError.message);
-								}else if(articleCount == 0 ){
-									// only initiate DB if 0 articles
-									paperchase.insertArticle(dbUpdate,journalName,function(insertArticlesError,articlesInserted){
-										if(insertArticlesError){
-											console.error('insertArticlesError',insertArticlesError);
-											res.send('Could not insert articles. Error: ' + insertArticlesError.message);
-										}else if(articlesInserted){
-											if(unmatched){
-												res.send('Done initiating DB. ' + articlesInserted.length + 'inserted. UNMATCHED: ' + JSON.stringify(unmatched));
-											}else{
-												res.send('Done initiating DB. ' + articlesInserted.length + 'inserted.');
-											}
-										}
-									});
-								}else{
-									res.send('Error. Cannot batch insert. There are already articles in the database');
-								}
-							});
+							res.send(dbUpdate);
 						}else if(unmatched){
 							res.send('UNMATCHED: ' + JSON.stringify(unmatched));
 						}
