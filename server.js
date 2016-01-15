@@ -173,7 +173,8 @@ app.get('/doi_status/:journalname/', function(req, res) {
 			var piiList = [];
 			var missingPii = [];
 			for(var a=0; a<articles.length ; a++){
-				if(articles[a]['ids']['pii']){
+				// console.log(articles[a]);
+				if(articles[a]['ids'] && articles[a]['ids']['pii']){
 					piiList.push(parseInt(articles[a]['ids']['pii']));
 					// doiUrlList.push('http://dx.doi.org/' + config.journalSettings[journalName]['doi'] + articles[a]['ids']['pii']);
 				}else{
@@ -297,6 +298,7 @@ app.get('/pmid_pii_pairs/:journalname', function(req, res) {
 });
 
 app.get('/add_pii_to_db/:journalname', function(req, res) {
+	// TODO: this is failing updating the DB
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	var journalName = req.params.journalname;
@@ -324,11 +326,9 @@ app.get('/add_pii_to_db/:journalname', function(req, res) {
 							console.log('..piiPmidPairs = ');
 							console.log(piiPmidPairs.length);
 							// Update Paperchase DB
-
-
 							for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
 								console.log('.. Update ' + piiPmidPairs[matched]['pmid'] + ' / ' + piiPmidPairs[matched]['pii']);
-								paperchase.articleUpdateViaPmid(piiPmidPairs[matched]['pmid'], {'ids.pii' : piiPmidPairs[matched]['pii']}, journalName, function(updateError,updated){
+								paperchase.articleIdsViaPmid(piiPmidPairs[matched]['pmid'], piiPmidPairs[matched]['pii'], journalName, function(updateError,updated){
 									if(updateError){
 										console.error(updateError);
 									}else if(updated){
