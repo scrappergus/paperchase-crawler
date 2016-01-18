@@ -297,53 +297,6 @@ app.get('/pmid_pii_pairs/:journalname', function(req, res) {
 	});
 });
 
-// app.get('/add_pii_to_db/:journalname', function(req, res) {
-	// TODO: this is failing updating the DB
-	// res.setHeader('Content-Type', 'application/json');
-	// res.setHeader('Access-Control-Allow-Origin', '*');
-	// var journalName = req.params.journalname;
-	// console.log('.. add_pii_to_db : ' + journalName);
-	// ncbi.allArticlesTitleAndPMID(journalName, journalSettings, function(titlesErr, pmidAndTitles) {
-	// 	if(titlesErr) {
-	// 		console.error('ERROR:');
-	// 		res.send(JSON.stringify(titlesErr));
-	// 	}
-	// 	if(pmidAndTitles){
-	// 		// console.log('crawlXmlRes');console.log(crawlXmlRes);
-	// 		// res.send(JSON.stringify(titles));
-	// 		production.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
-	// 			if(mysqlErr){
-	// 				console.error('ERROR');
-	// 				console.error(mysqlErr);
-	// 			}
-	// 			if(productionArticles){
-	// 				// now we have PII/title via production AND PMID/title from PubMed. Now compare titles and update Paperchase DB
-	// 				shared.matchPmidAndPii(pmidAndTitles,productionArticles,journalName,function(matchError,piiPmidPairs){
-	// 					if(matchError){
-	// 						console.error(matchError);
-	// 					}
-	// 					if(piiPmidPairs){
-	// 						console.log('..piiPmidPairs = ');
-	// 						console.log(piiPmidPairs.length);
-	// 						// Update Paperchase DB
-	// 						for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
-	// 							console.log('.. Update ' + piiPmidPairs[matched]['pmid'] + ' / ' + piiPmidPairs[matched]['pii']);
-	// 							paperchase.articleIdsViaPmid(piiPmidPairs[matched]['pmid'], piiPmidPairs[matched]['pii'], journalName, function(updateError,updated){
-	// 								if(updateError){
-	// 									console.error(updateError);
-	// 								}else if(updated){
-	// 									console.log('.. Updated ' + ' :' + updated);
-	// 								}
-	// 							});
-	// 						}
-	// 					}
-	// 				})
-	// 			}
-	// 		})
-	// 	}
-	// });
-// });
-
 // for getting PMID, PII, title into MongoLab DB. Sends to Paperchase to insert so that _id has same type. Via shell _id is Object. Via Mongo default is strig.
 // the rest of the data is process in Paperchase via articleMethods.processXML
 app.get('/initiate_articles_collection/:journalname',function(req, res) {
