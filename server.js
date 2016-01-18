@@ -375,13 +375,17 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 							var dbUpdate = [];
 							for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
 								// get into schema for MongoLab DB
-								dbUpdate.push({
+								var artObj = {
 									ids : {
-										pii : piiPmidPairs[matched]['pii'].toString(),
+										pii : piiPmidPairs[matched]['pii'],
 										pmid : piiPmidPairs[matched]['pmid']
 									},
 									title : piiPmidPairs[matched]['title']
-								})
+								}
+								if(artObj.ids.pii){
+									artObj.ids.pii = artObj.ids.pii.toString();
+								}
+								dbUpdate.push(artObj);
 							}
 							res.send(dbUpdate);
 						}else if(unmatched){
