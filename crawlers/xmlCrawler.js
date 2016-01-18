@@ -194,7 +194,7 @@ function get_and_save_article_xml(journal, pmid, cb) {
 						});
 					}
 					if(idList.pii){
-						getAndSavePmcXml(idsList, journal, function(uploadXmlError,uploadXmlRes){
+						getAndSavePmcXml(idList, journal, function(uploadXmlError,uploadXmlRes){
 							if(uploadXmlError){
 								console.error('uploadXmlError',uploadXmlError);
 							}else if(uploadXmlRes){
