@@ -10,6 +10,7 @@ var xml2js = require('xml2js');
 var request = require('request');
 var express = require('express');
 var journalSettings = config.journalSettings;
+var paperchase = require('../methods/paperchase');
 
 var s3Client = s3.createClient({
 	s3Options: {
@@ -121,6 +122,38 @@ function getPiiFromIdList(idlist, cb) {
 	});
 }
 
+function getAndSavePmcXml(idList, journal, cb){
+	// PMC ID and PII exist, now query PMC to get Full Text XML
+	// XML full text filename based on PII.
+	var fullTextXmlFilename = idList.pii + '.xml';
+	console.log('     Upload: ' + fullTextXmlFilename);
+	var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + idList.pmc;
+	// console.log('    XML: ' + full_xml_url);
+	get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
+		async.series([
+
+			function(scb) {
+				// Upload Full Text XML
+				upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
+			}
+		],function(series_err, series_res){
+			if(series_err) {
+				console.error(series_err);
+				cb(series_err);
+			} else {
+				var pair = {
+					ids: idList,
+					abstract_xml_url: series_res[0],
+					full_xml_url: series_res[1]
+				};
+				console.log('     Upload success!');
+				// console.log(pair);
+				cb(null, pair);
+			}
+		});
+	});
+}
+
 function get_and_save_article_xml(journal, pmid, cb) {
 	// console.log('... get_and_save_article_xml : ' + pmid);
 	// var abstractXmlFilename = 'abstract_' + pmid + '.xml';
@@ -141,41 +174,32 @@ function get_and_save_article_xml(journal, pmid, cb) {
 				}else if(idList.pmc){
 					if(!idList.pii){
 						// query using PMID for PII in DB
-						idList.pii = paperchase.articlePiiViaPmid(pmid);
+						paperchase.articlePiiViaPmid(pmid,journal,function(piiError,piiRes){
+							if(piiError){
+								console.error('piiError',piiError);
+							}else if(piiRes){
+								idList.pii = piiRes;
+								// console.log('    pii  = ' + piiRes );
+								getAndSavePmcXml(idList, journal, function(uploadXmlError,uploadXmlRes){
+									if(uploadXmlError){
+										console.error('uploadXmlError',uploadXmlError);
+									}else if(uploadXmlRes){
+										cb(null,uploadXmlRes);
+									}
+								});
+							}else{
+								console.log('     MISSING PII: PMC ID = ' + idList.pmc);
+								cb(null,null);
+							}
+						});
 					}
 					if(idList.pii){
-						// PMC ID and PII exist, now query PMC to get Full Text XML
-						// XML full text filename based on PII.
-						var fullTextXmlFilename = idList.pii + '.xml';
-						console.log('     Upload: ' + fullTextXmlFilename);
-						var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + idList.pmc;
-						// console.log('    XML: ' + full_xml_url);
-						get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
-							async.series([
-								// function(scb) {
-								// 	// Upload Abstract XML
-								// 	// upload_xml_string_as_file_to_s3(journal, abstract_xml_body, abstractXmlFilename, scb);
-								// },
-								function(scb) {
-
-									// Upload Full Text XML
-									upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
-								}
-							],function(series_err, series_res){
-								if(series_err) {
-									console.error(series_err);
-									cb(series_err);
-								} else {
-									var pair = {
-										ids: idList,
-										abstract_xml_url: series_res[0],
-										full_xml_url: series_res[1]
-									};
-									console.log('     Upload success!');
-									// console.log(pair);
-									cb(null, pair);
-								}
-							});
+						getAndSavePmcXml(idsList, journal, function(uploadXmlError,uploadXmlRes){
+							if(uploadXmlError){
+								console.error('uploadXmlError',uploadXmlError);
+							}else if(uploadXmlRes){
+								cb(null,uploadXmlRes);
+							}
 						});
 					}
 				}else if(idList.pmc && !idList.pii){

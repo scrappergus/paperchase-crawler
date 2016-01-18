@@ -129,7 +129,7 @@ paperchase.allArticlesPii = function(journal,cb){
 }
 
 paperchase.articlePiiViaPmid = function(pmid,journal,cb){
-	console.log('...articlePiiViaPmid ' + journal);
+	// console.log('...articlePiiViaPmid ' + journal);
 	var dbUrl = journalSettings[journal].dbUrl;
 	var dbName = journalSettings[journal]['mongo']['name'];
 	var dbUser = journalSettings[journal]['mongo']['user'];
@@ -150,18 +150,21 @@ paperchase.articlePiiViaPmid = function(pmid,journal,cb){
 				if(authenticateError){
 					console.error(authenticateError);
 				}else if(userAuthenticated){
-					var articleCount = 0 ;
-					db.collection('articles').findOne({'ids.pmid' : 'pmid'},function(findError,findResult){
+					// console.log('... user authenticated');
+					db.collection('articles').findOne({'ids.pmid' : pmid},function(findError,findResult){
 						if(findError){
 							console.error('findError', findError);
 							cb(findError);
 						}else if(findResult){
-							console.log(findResult);
+							// console.log(findResult);
 							if(findResult.ids.pii){
 								cb(null,findResult.ids.pii);
 							}else{
 								cb(null,null);
 							}
+						}else{
+							// console.log('..not found');
+							cb(null,null); // not found in DB
 						}
 					})
 				}
@@ -169,7 +172,7 @@ paperchase.articlePiiViaPmid = function(pmid,journal,cb){
 	    }
 	});
 }
-paperchase.articleUpdateViaPmid = function(pmid, updateObj, journal,cb){
+paperchase.articleIdsViaPmid = function(pmid, pii, journal,cb){
 	console.log('...articleUpdateViaPmid ' + pmid);
 	var dbUrl = journalSettings[journal].dbUrl;
 	var dbName = journalSettings[journal]['mongo']['name'];
@@ -191,15 +194,24 @@ paperchase.articleUpdateViaPmid = function(pmid, updateObj, journal,cb){
 				if(authenticateError){
 					console.error('User not authenticated',authenticateError);
 				}else if(userAuthenticated){
-					db.collection('articles').update({'ids.pmid' : 'pmid'}, updateObj,function(updateError,updated){
-						if(updateError){
-							console.error('updateError : ' + pmid, updateError);
-							cb(findError);
-						}else if(updated){
-							console.log('updated PMID ' + pmid);
-							cb(null,updated);
-						}
-					})
+					var art = db.collection('articles').findOne({'ids.pmid' : pmid});
+					if(art.ids){
+						art.ids.pii = pii;
+					}else{
+						art.ids = {};
+						art.ids.pii = pii;
+					}
+					if(art){
+						db.collection('articles').update({'_id' : art._id}, art,function(updateError,updated){
+							if(updateError){
+								console.error('updateError : ' + pmid, updateError);
+								cb(updateError);
+							}else if(updated){
+								console.log('updated PMID ' + pmid);
+								cb(null,updated);
+							}
+						});
+					}
 				}
 			});
 	    }
