@@ -306,43 +306,29 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 
 	var unmatched = [];
 	console.log('.. initiate DB : ' + journalName);
-	ncbi.allArticlesTitleAndPMID(journalName, journalSettings, function(titlesErr, pmidAndTitles) {
+	ncbi.allArticlesTitleAndIds(journalName, journalSettings, function(titlesErr, pubMedIdsAndTitles) {
 		if(titlesErr) {
 			console.error('ERROR',titlesErr);
 			res.send(JSON.stringify(titlesErr));
-		}else if(pmidAndTitles){
+		}else if(pubMedIdsAndTitles){
+			// res.send(pubMedIdsAndTitles);
 			production.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
 				if(mysqlErr){
-					console.error('MySQL ERROR',mysqlErr);
-					res.send('Error. Could not get articles in production database.');
-				}
-				if(productionArticles){
-					// now we have PII/title via production AND PMID/title from PubMed. Now compare titles and create pairs file
+					console.error('ERROR');
+					console.error(mysqlErr);
+				}else if(productionArticles){
+					// now we have PII/title via production AND PMID/title from PubMed. Now compare titles to pair PII to PMID
 					// loop throug PubMed array, because this will have less than production DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
-					shared.matchPmidAndPii(pmidAndTitles,productionArticles,journalName,function(matchError,piiPmidPairs,unmatched){
+					shared.matchPmidAndPii(pubMedIdsAndTitles,productionArticles,journalName,function(matchError,piiPmidPairs){
 						if(matchError){
-							console.error('matchError: PII/PMID', matchError);
-							res.send('Error. Could not insert articles.');
+							console.error(matchError);
 						}else if(piiPmidPairs){
-							// insert into MongoLab DB
-							var dbUpdate = [];
-							for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
-								// get into schema for MongoLab DB
-								var artObj = {
-									ids : {
-										pii : piiPmidPairs[matched]['pii'],
-										pmid : piiPmidPairs[matched]['pmid']
-									},
-									title : piiPmidPairs[matched]['title']
-								}
-								if(artObj.ids.pii){
-									artObj.ids.pii = artObj.ids.pii.toString();
-								}
-								dbUpdate.push(artObj);
-							}
-							res.send(dbUpdate);
-						}else if(unmatched){
-							res.send('UNMATCHED: ' + JSON.stringify(unmatched));
+							console.log('piiPmidPairs',piiPmidPairs)
+							// var pairsFile = '';
+							// for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
+							// 	pairsFile += piiPmidPairs[matched]['pmid'] + '            ' + piiPmidPairs[matched]['pii'] + '\n';
+							// }
+							res.send(piiPmidPairs);
 						}
 					})
 				}
@@ -350,6 +336,9 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 		}
 	});
 });
+
+
+
 
 app.listen(4932, function(){
 

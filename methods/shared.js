@@ -16,14 +16,20 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 	var piiPmidPairs = [];
 	var unmatched = [];
 	for(var articleIdx=0 ; articleIdx < pmidAndTitles.length ; articleIdx++){
-		// console.log(articleIdx);
-		var articlePmid = pmidAndTitles[articleIdx]['pmid'];
-		var articleTitlePubMed = pmidAndTitles[articleIdx]['title'].replace(/(\r\n|\n|\r)/gm,' ').replace(/\./g,' ').replace(/ /g,''); // PubMed ends title with punctuation
-		// console.log(articlePmid);
+		// console.log(articleIdx + ': ' + pmidAndTitles[articleIdx]['title']);
 		var articlePairsObject = {
-			pmid :  articlePmid,
 			title: pmidAndTitles[articleIdx]['title']
 		};
+		var articlePmid;
+			articlePmid = pmidAndTitles[articleIdx]['pmid']; //just title and PMID sent, as well as PII from prodution DB
+		if(!articlePmid){
+			articlePairsObject['ids'] = pmidAndTitles[articleIdx]['ids'];
+			articlePmid = pmidAndTitles[articleIdx]['ids']['pmid']; // title and all IDs from PubMed sent, as well as PII from prodution DB
+		}else{
+			articlePairsObject['pmid'] = articlePmid;
+		}
+		var articleTitlePubMed = pmidAndTitles[articleIdx]['title'].replace(/(\r\n|\n|\r)/gm,' ').replace(/\./g,' ').replace(/ /g,''); // PubMed ends title with punctuation
+		// console.log(articlePmid);
 
 		// match PubMed title with Production DB title
 		for(var productionArticleIdx = 0 ; productionArticleIdx < productionArticles.length ; productionArticleIdx++){
@@ -32,21 +38,19 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 			if(articleTitleProduction.toLowerCase() == articleTitlePubMed.toLowerCase()){
 				var articlePii = productionArticles[productionArticleIdx][config.journalSettings[journalName].mysql.articlesTable.articleIdField];
 				// console.log('MATCH : ' + articlePii + ' = ' + articlePmid);
-				articlePairsObject.pii = articlePii;
+				if(articlePairsObject['ids']){
+					articlePairsObject['ids']['pii'] = articlePii;
+				}else{
+					articlePairsObject.pii = articlePii;
+				}
+
 			}
 		}
+		// console.log('articlePairsObject',articlePairsObject);
+		piiPmidPairs.push(articlePairsObject);
 
-		if(articlePairsObject.pii){
-			piiPmidPairs.push(articlePairsObject);
-		}else{
-			unmatched.push(articlePairsObject);
-		}
 
 		if(articleIdx == parseInt(pmidAndTitles.length-1)){
-			// console.log(piiPmidPairs);
-			// res.send(piiPmidPairs);
-			// console.log(unmatched);
-			// res.send(pairsFile);
 			cb(null,piiPmidPairs,unmatched);
 		}
 	}

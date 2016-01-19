@@ -6,8 +6,8 @@ var ncbi = {
 	get_pmid_list_for_issn: function(issn, cb) {
 		// via PubMed
 		// console.log('... get_pmid_list_for_issn : ' + issn);
-		var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
-		// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=1"; // for testing locally, smaller response
+		// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
+		var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=10"; // for testing locally, smaller response
 		request(pmidListUrl, function(err, res, body){
 			if(err) {
 				cb(err);
@@ -41,8 +41,8 @@ var ncbi = {
 			}
 		});
 	},
-	getTitleAndAllIdsFromPmid: function(pmid,cb){
-		// console.log('..getTitleAndAllIdsFromPmid : ' + pmid );
+	getArticleTitleAndIdsFromPmid: function(pmid,cb){
+		// console.log('..getArticleTitleAndIdsFromPmid : ' + pmid );
 		var articleJsonUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=' + pmid;
 		request(articleJsonUrl, function(err, res, body){
 			if(err) {
@@ -73,6 +73,42 @@ var ncbi = {
 				cb(null,artObj);
 			}
 		});
+	},
+	allArticlesTitleAndIds: function(journal,journalSettings,cbBatch){
+		console.log('..allArticlesTitleAndIds');
+		// via PubMed
+		var journalDb = journalSettings[journal].dbUrl,
+			journalIssn = journalSettings[journal].issn;
+			console.log('--- Begin PMID/Title Crawler : ' + journal);
+			ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
+				console.log('     PubMed Article Count: ' + list.length);
+				// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
+				async.mapSeries(list, function(pmid, map_cb){
+					console.log('---- PMID: ' + pmid);
+					// Using PMID, retrieve article Title and ID list
+
+					ncbi.getArticleTitleAndIdsFromPmid(pmid, function(articleTitleError, articlePubMedData){
+						if(articleTitleError) {
+							console.error('ERROR', articleTitleError);
+							// map_cb();
+						}else if(articlePubMedData){
+							map_cb(null, articlePubMedData);
+						}
+					});
+				}, function(err, articles){
+					if(err) {
+						console.error('ERROR',err);
+						cbBatch(err);
+					} else {
+						// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
+						// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
+						articles = shared.removeEmptyFromArray(articles);
+						// console.log('articles');
+						// console.log(articles);
+						cbBatch(null, articles); // remove empty before returning to Paperchase
+					}
+				});
+			});
 	},
 	allArticlesTitleAndPMID: function(journal,journalSettings,cbBatch){
 		// console.log('..allArticlesTitleAndPMID');
