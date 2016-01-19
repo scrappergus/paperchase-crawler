@@ -65,7 +65,7 @@ var ncbi = {
 					}else if(idType == 'pii'){
 						artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
 					}else if(idType == 'pubmed'){
-						artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+						artObj['ids']['pmid'] = articleIdList[i]['value']; //keep consistent with paperchase
 					}
 				}
 				artObj['title'] = articleJson['title'];
