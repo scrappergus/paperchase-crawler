@@ -314,8 +314,7 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 			// res.send(pubMedIdsAndTitles);
 			production.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
 				if(mysqlErr){
-					console.error('ERROR');
-					console.error(mysqlErr);
+					console.error('ERROR',mysqlErr);
 				}else if(productionArticles){
 					// now we have PII/title via production AND PMID/title from PubMed. Now compare titles to pair PII to PMID
 					// loop throug PubMed array, because this will have less than production DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
@@ -323,11 +322,7 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 						if(matchError){
 							console.error(matchError);
 						}else if(piiPmidPairs){
-							console.log('piiPmidPairs',piiPmidPairs)
-							// var pairsFile = '';
-							// for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
-							// 	pairsFile += piiPmidPairs[matched]['pmid'] + '            ' + piiPmidPairs[matched]['pii'] + '\n';
-							// }
+							// console.log('piiPmidPairs',piiPmidPairs)
 							res.send(piiPmidPairs);
 						}
 					})
