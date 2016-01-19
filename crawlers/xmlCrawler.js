@@ -125,33 +125,42 @@ function getPiiFromIdList(idlist, cb) {
 function getAndSavePmcXml(idList, journal, cb){
 	// PMC ID and PII exist, now query PMC to get Full Text XML
 	// XML full text filename based on PII.
-	var fullTextXmlFilename = idList.pii + '.xml';
-	console.log('     Upload: ' + fullTextXmlFilename);
-	var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + idList.pmc;
-	// console.log('    XML: ' + full_xml_url);
-	get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
-		async.series([
+	var fullTextXmlFilename;
+	if(idList.pii){
+		fullTextXmlFilename = idList.pii + '.xml';
+	}else if(idList.doi){
+		fullTextXmlFilename = idList.doi + '.xml';
+	}
+	if(fullTextXmlFilename){
+		console.log('     Upload: ' + fullTextXmlFilename);
+		var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + idList.pmc;
+		// console.log('    XML: ' + full_xml_url);
+		get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
+			async.series([
 
-			function(scb) {
-				// Upload Full Text XML
-				upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
-			}
-		],function(series_err, series_res){
-			if(series_err) {
-				console.error(series_err);
-				cb(series_err);
-			} else {
-				var pair = {
-					ids: idList,
-					abstract_xml_url: series_res[0],
-					full_xml_url: series_res[1]
-				};
-				console.log('     Upload success!');
-				// console.log(pair);
-				cb(null, pair);
-			}
+				function(scb) {
+					// Upload Full Text XML
+					upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
+				}
+			],function(series_err, series_res){
+				if(series_err) {
+					console.error(series_err);
+					cb(series_err);
+				} else {
+					var pair = {
+						ids: idList,
+						abstract_xml_url: series_res[0],
+						full_xml_url: series_res[1]
+					};
+					console.log('      Upload success!');
+					// console.log(pair);
+					cb(null, pair);
+				}
+			});
 		});
-	});
+	}else{
+		console.log('cannot upload: ' + JSON.stringify(idList));
+	}
 }
 
 function get_and_save_article_xml(journal, pmid, cb) {
