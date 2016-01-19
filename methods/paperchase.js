@@ -89,8 +89,8 @@ paperchase.insertArticle = function (articleData,journal,cb) {
 }
 
 
-paperchase.allArticlesPii = function(journal,cb){
-	console.log('...allArticlesPii ' + journal);
+paperchase.allArticlesIds = function(journal,cb){
+	console.log('...allArticlesIds ' + journal);
 	var dbUrl = journalSettings[journal].dbUrl;
 	var dbName = journalSettings[journal]['mongo']['name'];
 	var dbUser = journalSettings[journal]['mongo']['user'];
