@@ -161,37 +161,25 @@ app.get('/doi_status/:journalname/', function(req, res) {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	var journalName = req.params.journalname;
 	console.log('...fetching status for : ' + journalName);
-	var journalPiiList = paperchase.allArticlesPii(journalName, function(articlesError, articles) {
+	var journalPiiList = paperchase.allArticlesIds(journalName, function(articlesError, articles) {
 		if(articlesError){
 			console.error(articlesError);
 			res.send('ERROR : ' + JSON.stringify(articlesError));
 		}
 		if(articles){
 			console.log('   article count = ' + articles.length);
-			// PII is stored as a string in the DB. Because some IDs have characters, for ex PMC ID
-			// parse to integer for sorting when pusing to piiList
-			var piiList = [];
-			var missingPii = [];
-			for(var a=0; a<articles.length ; a++){
-				// console.log(articles[a]);
-				if(articles[a]['ids'] && articles[a]['ids']['pii']){
-					piiList.push(parseInt(articles[a]['ids']['pii']));
-					// doiUrlList.push('http://dx.doi.org/' + config.journalSettings[journalName]['doi'] + articles[a]['ids']['pii']);
-				}else{
-					missingPii.push(articles[a]['_id']);
-				}
-			}
-
-			piiList = piiList.sort(function(a, b) {
-				return a - b;
-			});
-			crossRef.allArticlesCheck(journalName,piiList,function(e,r){
+			crossRef.allArticlesCheck(journalName,articles,function(e,registeredRes,doiTracker){
 				if(e){
 					console.error(e);
 					res.send('ERROR: ' + JSON.stringify(e));
 				}
-				if(r){
-					res.send(r);
+				if(registeredRes){
+					// combine crossref res with db info
+					for(var registeredResIdx = 0 ; registeredResIdx < registeredRes.length ; registeredResIdx++){
+						var doi = registeredRes[registeredResIdx]['doi'];
+						registeredRes[registeredResIdx]['paperchase'] = doiTracker[doi];
+					}
+					res.send(registeredRes);
 				}
 			});
 		}

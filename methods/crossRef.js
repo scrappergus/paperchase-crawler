@@ -10,20 +10,22 @@ crossRef.doiUrl = function(pii,journalName){
 
 crossRef.allArticlesCheck = function(journalName,articles,cb){
 	var doiUrlList = [];
+	var doiTracker = {};
 	for(var a=0; a<articles.length ; a++){
-		if(articles[a]['doi']){
-			doiUrlList.push(articles[a]['doi']);
-		}else if(articles[a]['pii']){
-			doiUrlList.push(crossRef.doiUrl(articles[a]['pii'],journalName));
+		if(articles[a]['ids']['doi']){
+			doiTracker[articles[a]['ids']['doi']] = articles[a];
+			doiUrlList.push(articles[a]['ids']['doi']);
+		}else if(articles[a]['ids']['pii']){
+			doiTracker[crossRef.doiUrl(articles[a]['ids']['pii'],journalName)] = articles[a];
+			doiUrlList.push(crossRef.doiUrl(articles[a]['ids']['pii'],journalName)); // use PII to construct the DOI
 		}
-
 	}
 	async.map(doiUrlList, crossRef.registered, function(err, registered) {
 		if(err){
 			console.error('doiUrlList', err);
 			cb(true,'Could not check articles');
 		}else if (registered) {
-			cb(null,registered);
+			cb(null,registered,doiTracker);
 		}
 	});
 }
@@ -32,8 +34,7 @@ crossRef.registered = function(doiUrl, cb){
 	// console.log('registered? ' + doiUrl);
 	var doiPieces = doiUrl.split('.');
 	var article = {
-		doi : doiUrl,
-		pii : doiPieces[parseInt(doiPieces.length - 1)]
+		doi : doiUrl
 	}
 	doiUrl = doiUrl.replace('http://dx.doi.org/','');
 	var error = false;
@@ -61,10 +62,10 @@ crossRef.registered = function(doiUrl, cb){
 			article.volume = responseJson.volume;
 			article.deposited = responseJson.deposited;
 			if(responseJson['published-online']){
-				article.article_epub_date = responseJson['published-online']['date-parts'][0].join('-');
+				article.crossref_epub_date = responseJson['published-online']['date-parts'][0].join('-');
 			}
 			if(responseJson['published-print']){
-				article.article_print_date = responseJson['published-print']['date-parts'][0].join('-');
+				article.crossref_print_date = responseJson['published-print']['date-parts'][0].join('-');
 			}
 		}else{
 			article.registered = 'Cannot determine';
