@@ -11,7 +11,12 @@ crossRef.doiUrl = function(pii,journalName){
 crossRef.allArticlesCheck = function(journalName,articles,cb){
 	var doiUrlList = [];
 	for(var a=0; a<articles.length ; a++){
-		doiUrlList.push(crossRef.doiUrl(articles[a],journalName));
+		if(articles[a]['doi']){
+			doiUrlList.push(articles[a]['doi']);
+		}else if(articles[a]['pii']){
+			doiUrlList.push(crossRef.doiUrl(articles[a]['pii'],journalName));
+		}
+
 	}
 	async.map(doiUrlList, crossRef.registered, function(err, registered) {
 		if(err){
@@ -55,7 +60,12 @@ crossRef.registered = function(doiUrl, cb){
 			article.indexed_date = responseJson.indexed.timestamp;
 			article.volume = responseJson.volume;
 			article.deposited = responseJson.deposited;
-			article.article_date = responseJson['published-online']['date-parts'][0].join('-');
+			if(responseJson['published-online']){
+				article.article_epub_date = responseJson['published-online']['date-parts'][0].join('-');
+			}
+			if(responseJson['published-print']){
+				article.article_print_date = responseJson['published-print']['date-parts'][0].join('-');
+			}
 		}else{
 			article.registered = 'Cannot determine';
 			console.error(doiUrl, 'Cannot determine if registered');
