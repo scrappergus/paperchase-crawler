@@ -39,9 +39,9 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 				var articlePii = productionArticles[productionArticleIdx][config.journalSettings[journalName].mysql.articlesTable.articleIdField];
 				// console.log('MATCH : ' + articlePii + ' = ' + articlePmid);
 				if(articlePairsObject['ids']){
-					articlePairsObject['ids']['pii'] = articlePii;
+					articlePairsObject['ids']['pii'] = articlePii.toString();
 				}else{
-					articlePairsObject.pii = articlePii;
+					articlePairsObject.pii = articlePii.toString();
 				}
 
 			}
