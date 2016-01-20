@@ -12,40 +12,38 @@ shared.removeEmptyFromArray = function(arr){
 	return temp;
 }
 
+
+shared.stripTitle = function(title){
+	return title.replace(/(\r\n|\n|\r)/gm,' ').replace(/\./g,' ').replace(/ /g,'').replace(/-/g,'').replace(/,/g,'').replace(/'/g,'').replace(/’/g,'').replace('–','').replace(/<[^>]*>/g,'').replace(/(\()/g,'').replace(/(\))/g,'').replace(/</g,'').replace(/>/g,'').replace(/>/g,'').replace(/&amp;gt;/g,'').toLowerCase();
+}
+
 shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,cb){
+	// console.log('..matchPmidAndPii');
 	var piiPmidPairs = [];
 	var unmatched = [];
 	for(var articleIdx=0 ; articleIdx < pmidAndTitles.length ; articleIdx++){
-		// console.log(articleIdx + ': ' + pmidAndTitles[articleIdx]['title']);
-		var articlePairsObject = {
-			title: pmidAndTitles[articleIdx]['title']
-		};
-		var articlePmid;
-			articlePmid = pmidAndTitles[articleIdx]['pmid']; //just title and PMID sent, as well as PII from prodution DB
-		if(!articlePmid){
-			articlePairsObject['ids'] = pmidAndTitles[articleIdx]['ids'];
-			articlePmid = pmidAndTitles[articleIdx]['ids']['pmid']; // title and all IDs from PubMed sent, as well as PII from prodution DB
-		}else{
-			articlePairsObject['pmid'] = articlePmid;
-		}
-		var articleTitlePubMed = pmidAndTitles[articleIdx]['title'].replace(/(\r\n|\n|\r)/gm,' ').replace(/\./g,' ').replace(/ /g,''); // PubMed ends title with punctuation
+		// console.log(articleIdx,JSON.stringify(pmidAndTitles[articleIdx]));
+		var articlePairsObject = pmidAndTitles[articleIdx];
+
+		var articleTitlePubMed = shared.stripTitle(pmidAndTitles[articleIdx]['title']); // PubMed ends title with punctuation
 		// console.log(articlePmid);
 
 		// match PubMed title with Production DB title
 		for(var productionArticleIdx = 0 ; productionArticleIdx < productionArticles.length ; productionArticleIdx++){
 			// console.log(productionArticleIdx);
-			var articleTitleProduction = productionArticles[productionArticleIdx]['title'].replace(/(\r\n|\n|\r)/gm,' ').replace(/\./g,' ').replace(/(<([^>]+)>)/gi,'').replace(/ /g,'');
+			var articleTitleProduction = shared.stripTitle(productionArticles[productionArticleIdx]['title']);
+
 			if(articleTitleProduction.toLowerCase() == articleTitlePubMed.toLowerCase()){
 				var articlePii = productionArticles[productionArticleIdx][config.journalSettings[journalName].mysql.articlesTable.articleIdField];
 				// console.log('MATCH : ' + articlePii + ' = ' + articlePmid);
-				if(articlePairsObject['ids']){
-					articlePairsObject['ids']['pii'] = articlePii.toString();
-				}else{
-					articlePairsObject.pii = articlePii.toString();
-				}
-
+				articlePairsObject['ids']['pii'] = articlePii.toString();
 			}
 		}
+
+		if(!articlePairsObject['ids']['pii']){
+			console.log('PII Missing: ' + articlePairsObject['ids']['pmid']);
+		}
+
 		// console.log('articlePairsObject',articlePairsObject);
 		piiPmidPairs.push(articlePairsObject);
 
