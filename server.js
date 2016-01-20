@@ -300,6 +300,7 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 			res.send(JSON.stringify(titlesErr));
 		}else if(pubMedIdsAndTitles){
 			// res.send(pubMedIdsAndTitles);
+			// we have all the titles/pmid from PubMed. Now query the production MySQL DB
 			production.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
 				if(mysqlErr){
 					console.error('ERROR',mysqlErr);
