@@ -78,34 +78,34 @@ var ncbi = {
 		// console.log('..allArticlesTitleAndIds');
 		// via PubMed
 		// var journalDb = journalSettings[journal].dbUrl,
-			journalIssn = journalSettings[journal].issn;
-			console.log('--- Begin PMID/Title Crawler : ' + journal);
-			ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
-				console.log('     PubMed Article Count: ' + list.length);
-				// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
-				async.mapSeries(list, function(pmid, map_cb){
-					// console.log('---- PMID: ' + pmid);
-					// Using PMID, retrieve article Title and ID list
+		journalIssn = journalSettings[journal].issn;
+		console.log('--- Begin PMID/Title Crawler : ' + journal);
+		ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
+			console.log('     PubMed Article Count: ' + list.length);
+			// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
+			async.mapSeries(list, function(pmid, map_cb){
+				// console.log('---- PMID: ' + pmid);
+				// Using PMID, retrieve article Title and ID list
 
-					ncbi.getArticleTitleAndIdsFromPmid(pmid, function(articleTitleError, articlePubMedData){
-						if(articleTitleError) {
-							console.error('ERROR', articleTitleError);
-							// map_cb();
-						}else if(articlePubMedData){
-							map_cb(null, articlePubMedData);
-						}
-					});
-				}, function(err, articles){
-					if(err) {
-						console.error('ERROR',err);
-						cbBatch(err);
-					} else {
-						articles = shared.removeEmptyFromArray(articles);
-						// console.log('articles',articles);
-						cbBatch(null, articles);
+				ncbi.getArticleTitleAndIdsFromPmid(pmid, function(articleTitleError, articlePubMedData){
+					if(articleTitleError) {
+						console.error('ERROR', articleTitleError);
+						// map_cb();
+					}else if(articlePubMedData){
+						map_cb(null, articlePubMedData);
 					}
 				});
+			}, function(err, articles){
+				if(err) {
+					console.error('ERROR',err);
+					cbBatch(err);
+				} else {
+					articles = shared.removeEmptyFromArray(articles);
+					// console.log('articles',articles);
+					cbBatch(null, articles);
+				}
 			});
+		});
 	},
 	allArticlesTitleAndPMID: function(journal,journalSettings,cbBatch){
 		// console.log('..allArticlesTitleAndPMID');
