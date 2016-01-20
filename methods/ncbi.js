@@ -75,16 +75,16 @@ var ncbi = {
 		});
 	},
 	allArticlesTitleAndIds: function(journal,journalSettings,cbBatch){
-		console.log('..allArticlesTitleAndIds');
+		// console.log('..allArticlesTitleAndIds');
 		// via PubMed
-		var journalDb = journalSettings[journal].dbUrl,
+		// var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
 			console.log('--- Begin PMID/Title Crawler : ' + journal);
 			ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
 				console.log('     PubMed Article Count: ' + list.length);
 				// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
 				async.mapSeries(list, function(pmid, map_cb){
-					console.log('---- PMID: ' + pmid);
+					// console.log('---- PMID: ' + pmid);
 					// Using PMID, retrieve article Title and ID list
 
 					ncbi.getArticleTitleAndIdsFromPmid(pmid, function(articleTitleError, articlePubMedData){
@@ -100,12 +100,9 @@ var ncbi = {
 						console.error('ERROR',err);
 						cbBatch(err);
 					} else {
-						// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
-						// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
 						articles = shared.removeEmptyFromArray(articles);
-						// console.log('articles');
-						// console.log(articles);
-						cbBatch(null, articles); // remove empty before returning to Paperchase
+						// console.log('articles',articles);
+						cbBatch(null, articles);
 					}
 				});
 			});
