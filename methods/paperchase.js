@@ -88,7 +88,6 @@ paperchase.insertArticle = function (articleData,journal,cb) {
 	});
 }
 
-
 paperchase.allArticlesIds = function(journal,cb){
 	console.log('...allArticlesIds ' + journal);
 	var dbUrl = journalSettings[journal].dbUrl;
@@ -164,6 +163,46 @@ paperchase.articlePiiViaPmid = function(pmid,journal,cb){
 							}
 						}else{
 							// console.log('..not found');
+							cb(null,null); // not found in DB
+						}
+					})
+				}
+			});
+	    }
+	});
+}
+paperchase.getArticlePaperchaseIdsViaPmid = function(pmid,journal,cb){
+	// console.log('...articlePiiViaPmid ' + journal);
+	var dbUrl = journalSettings[journal].dbUrl;
+	var dbName = journalSettings[journal]['mongo']['name'];
+	var dbUser = journalSettings[journal]['mongo']['user'];
+	var dbPw = journalSettings[journal]['mongo']['password'];
+	var dbServer = journalSettings[journal]['mongo']['server'];
+	var dbPort= journalSettings[journal]['mongo']['port'];
+	var dbServer = journalSettings[journal]['mongo']['server'];
+
+	var db = new Db(dbName, new Server(dbServer, dbPort));
+	// Establish connection to db
+	db.open(function(err, db) {
+	    if(err){
+	    	console.error('DB Connection ERROR. Could not get list of PII in journal',err);
+			cb(err);
+	    }else{
+	      // Authenticate
+			db.authenticate(dbUser, dbPw, function(authenticateError, userAuthenticated) {
+				if(authenticateError){
+					console.error(authenticateError);
+				}else if(userAuthenticated){
+					// console.log('... user authenticated. Find PMID ' + pmid);
+					db.collection('articles').findOne({'ids.pmid' : pmid},function(findError,findResult){
+						if(findError){
+							console.error('findError', findError);
+							cb(findError);
+						}else if(findResult){
+							// console.log('findResult',findResult);
+							cb(null,findResult.ids);
+						}else{
+							console.log('Could Not find PMID ' + pmid + ' in the Paperchase DB');
 							cb(null,null); // not found in DB
 						}
 					})
