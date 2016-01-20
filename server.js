@@ -320,7 +320,7 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 	});
 });
 
-app.get('/article_dates_legacy/:journalname',function(req, res) {
+app.get('/articles_epub_legacy/:journalname',function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	var journalName = req.params.journalname;
