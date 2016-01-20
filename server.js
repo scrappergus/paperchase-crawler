@@ -9,7 +9,7 @@ var shared = require('./methods/shared');
 var journalSettings = config.journalSettings;
 var xmlCrawler = require('./crawlers/xmlCrawler');
 var ncbi = require('./methods/ncbi');
-var legacy = require('./legacy');
+var legacy = require('./methods/legacy');
 var paperchase = require('./methods/paperchase');
 var crossRef = require('./methods/crossRef');
 
@@ -320,6 +320,20 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 	});
 });
 
+app.get('/article_dates_legacy/:journalname',function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	console.log('.. Get article dates for : ' + journalName);
+	legacy.getArticleDates(journalName, function(articleDatesErr, articleDates) {
+		if(articleDatesErr) {
+			console.error('ERROR',articleDatesErr);
+			res.send(JSON.stringify(articleDatesErr));
+		}else if(articleDates){
+			res.send(articleDates);
+		}
+	});
+});
 
 
 
