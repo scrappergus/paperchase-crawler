@@ -9,7 +9,7 @@ var shared = require('./methods/shared');
 var journalSettings = config.journalSettings;
 var xmlCrawler = require('./crawlers/xmlCrawler');
 var ncbi = require('./methods/ncbi');
-var production = require('./production');
+var legacy = require('./legacy');
 var paperchase = require('./methods/paperchase');
 var crossRef = require('./methods/crossRef');
 
@@ -241,7 +241,7 @@ app.get('/article_count/:journalname', function(req, res) {
 });
 
 
-// for when PubMed XML does not contain PII, use the production DB to get PII/title and use PubMed to get PMID/title.
+// for when PubMed XML does not contain PII, use the legacy DB to get PII/title and use PubMed to get PMID/title.
 // Matched PII/PMID will be pushed to an array. Then this will be used to create the output pairs file.
 // Unmatched PMID are logged in the console
 app.get('/pmid_pii_pairs/:journalname', function(req, res) {
@@ -257,17 +257,16 @@ app.get('/pmid_pii_pairs/:journalname', function(req, res) {
 		if(pmidAndTitles){
 			// console.log('crawlXmlRes');console.log(crawlXmlRes);
 			// res.send(JSON.stringify(titles));
-			production.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
+			legacy.getAllArticlesIdAndTitle(journalName, function(legacyArticles, mysqlErr ){
 				if(mysqlErr){
 					console.error('ERROR');
 					console.error(mysqlErr);
 				}
-				if(productionArticles){
-					// console.log('production articles count = ' + productionArticles.length);
-					// console.log(productionArticles);
-					// now we have PII/title via production AND PMID/title from PubMed. Now compare titles and create pairs file
-					// loop throug PubMed array, because this will have less than production DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
-					shared.matchPmidAndPii(pmidAndTitles,productionArticles,journalName,function(matchError,piiPmidPairs){
+				if(legacyArticles){
+					// console.log('legacyArticles count = ' + legacyArticles.length);
+					// now we have PII/title via legacy AND PMID/title from PubMed. Now compare titles and create pairs file
+					// loop throug PubMed array, because this will have less than legacy DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
+					shared.matchPmidAndPii(pmidAndTitles,legacyArticles,journalName,function(matchError,piiPmidPairs){
 						if(matchError){
 							console.error(matchError);
 						}
@@ -301,7 +300,7 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 		}else if(pubMedIdsAndTitles){
 			// res.send(pubMedIdsAndTitles);
 			// we have all the titles/pmid from PubMed. Now query the production MySQL DB
-			production.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
+			legacy.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
 				if(mysqlErr){
 					console.error('ERROR',mysqlErr);
 				}else if(productionArticles){
@@ -320,6 +319,7 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 		}
 	});
 });
+
 
 
 

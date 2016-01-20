@@ -1,11 +1,11 @@
-// For connection with journal production DB
-var production = {};
+// For connection with journal legacy DB
+var legacy = {};
 
 var config = require('./config');
 var mysql = require('mysql');
 
-production.getAllArticlesIdAndTitle = function(journal,cb){
-	// console.log('..connect to production DB');
+legacy.getAllArticlesIdAndTitle = function(journal,cb){
+	// console.log('..connect to legacy DB');
 	// DB settings
 	var connection = mysql.createConnection({
 	  host     : config.journalSettings[journal].mysql.host,
@@ -42,4 +42,4 @@ production.getAllArticlesIdAndTitle = function(journal,cb){
 
 // connection.end();
 
-module.exports = production;
+module.exports = legacy;
