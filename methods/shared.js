@@ -34,9 +34,12 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 			var articleTitleProduction = shared.stripTitle(productionArticles[productionArticleIdx]['title']);
 
 			if(articleTitleProduction.toLowerCase() == articleTitlePubMed.toLowerCase()){
-				var articlePii = productionArticles[productionArticleIdx][config.journalSettings[journalName].mysql.articlesTable.articleIdField];
-				// console.log('MATCH : ' + articlePii + ' = ' + articlePmid);
-				articlePairsObject['ids']['pii'] = articlePii.toString();
+				var legacyArticleIdField = config.journalSettings[journalName].mysql.articlesTable.articleId;
+				var articlePii = productionArticles[productionArticleIdx][legacyArticleIdField];
+				if(articlePii){
+					articlePii = articlePii.toString();
+				}
+				articlePairsObject['ids']['pii'] = articlePii;
 			}
 		}
 
