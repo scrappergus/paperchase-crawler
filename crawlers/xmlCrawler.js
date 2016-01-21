@@ -334,7 +334,7 @@ module.exports = {
 					// list = ['21779478']; //for local testing
 					// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
 					async.mapSeries(list, function(pmid, map_cb){
-						console.log('---- PMID: ' + pmid);
+						console.log('-- PMID: ' + pmid);
 						// Now we have a list of PMID from PubMed. Now get IDs from Paperchase, paperchase_id will be used for filename. If not in DB, then the DOI or PII from the XML will be used for the filename, these are logged in console.
 						getPaperchaseArticlesAndSaveXml(journal, pmid, function(articleXmlErr, articleXmlRes){
 							if(articleXmlErr) {
