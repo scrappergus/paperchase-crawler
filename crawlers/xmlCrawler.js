@@ -219,7 +219,7 @@ function verifyFullTextXml(xmlString, cb){
 }
 
 function getAndSavePmcXml(articleIds, journal, cb){
-	console.log('... getAndSavePmcXml :  PMC' + articleIds.pmc);
+	// console.log('... getAndSavePmcXml :  PMC' + articleIds.pmc);
 	// Query PMC to get Full Text XML
 	// XML full text filename based on paperchase_id.
 	var fullTextXmlFilename;
@@ -276,7 +276,7 @@ function getAndSavePmcXml(articleIds, journal, cb){
 }
 
 function getPaperchaseArticlesAndSaveXml(journal, pmid, cb) {
-	console.log('... getPaperchaseArticlesAndSaveXml : PMID ' + pmid);
+	// console.log('... getPaperchaseArticlesAndSaveXml : PMID ' + pmid);
 	var articleIds;
 	paperchase.getArticlePaperchaseIdsViaPmid(pmid,journal,function(paperchaseIdError,paperchaseIdList){
 		if(paperchaseIdError){
