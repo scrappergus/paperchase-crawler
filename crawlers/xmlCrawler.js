@@ -252,7 +252,7 @@ function getAndSavePmcXml(articleIds, journal, cb){
 								}
 							}
 							if(fullTextXmlFilename){
-								// upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
+								upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
 							}
 						}
 					});
