@@ -162,7 +162,7 @@ paperchase.allPmidAndPaperchaseIdPairs = function(journal,cb){
 									pairsObject[articles[articleIdx]['ids']['pmid']] = articles[articleIdx]['ids'];
 								}
 								if(articleIdx == parseInt(articles.length - 1)){
-									console.log('pairsObject',pairsObject)
+									// console.log('pairsObject',pairsObject)
 									cb(null,pairsObject);
 								}
 							}
