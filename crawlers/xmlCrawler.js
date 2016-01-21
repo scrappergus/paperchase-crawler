@@ -262,7 +262,6 @@ function getAndSavePmcXml(articleIds, journal, cb){
 					console.error('series_err',series_err);
 					cb(series_err);
 				} else {
-					articleIds.uploaded = true;
 					articleIds.full_xml = series_res[0];
 					console.log('     Upload success: ' + series_res[0]);
 					cb(null, articleIds);
@@ -275,44 +274,39 @@ function getAndSavePmcXml(articleIds, journal, cb){
 	}
 }
 
-function getPaperchaseArticlesAndSaveXml(journal, pmid, cb) {
-	// console.log('... getPaperchaseArticlesAndSaveXml : PMID ' + pmid);
+function getArticlesAndSaveXml(journal, pmid, paperchaseArticles, cb) {
 	var articleIds;
-	paperchase.getArticlePaperchaseIdsViaPmid(pmid,journal,function(paperchaseIdError,paperchaseIdList){
-		if(paperchaseIdError){
-			console.error('paperchaseIdError',paperchaseIdError);
-		}else if(paperchaseIdList){
-			getAndSavePmcXml(paperchaseIdList, journal, function(uploadXmlError,uploadXmlRes){
-						if(uploadXmlError){
-							console.error('uploadXmlError',uploadXmlError);
-							cb(true,uploadXmlError);
-						}else if(uploadXmlRes){
-							cb(null,uploadXmlRes);
-						}
-			});
-		}else if(!paperchaseIdList){
-			// article NOT found in Paperchase DB
-			// Query PubMed for ID List
-			// still go ahead and upload. but use DOI or PII from XML for filename.
-			console.log('    MISSING In Paperchase : PMID = ' + pmid);
-			getArticleIdsFromPubMedAbstract(pmid,function(abstractIdsError, abstractIdsRes){
-				if(abstractIdsError){
-					console.error('abstractIdsError',abstractIdsError);
-					console.log('     Cannot get XML : PMID = ' + pmid); // No PMC ID to use
-				}else if(abstractIdsRes){
-					// console.log('     abstractIdsRes',abstractIdsRes);
-					getAndSavePmcXml(abstractIdsRes, journal, function(uploadXmlError,uploadXmlRes){
-						if(uploadXmlError){
-							console.error('uploadXmlError',uploadXmlError);
-							cb(true,uploadXmlError);
-						}else if(uploadXmlRes){
-							cb(null,uploadXmlRes);
-						}
-					});
-				}
-			});
-		}
-	});
+	if(paperchaseArticles[pmid]){
+		getAndSavePmcXml(paperchaseArticles[pmid], journal, function(uploadXmlError,uploadXmlRes){
+			if(uploadXmlError){
+				console.error('uploadXmlError',uploadXmlError);
+				cb(true,uploadXmlError);
+			}else if(uploadXmlRes){
+				cb(null,uploadXmlRes);
+			}
+		});
+	}else{
+		// article NOT found in Paperchase DB
+		// Query PubMed for ID List
+		// still go ahead and upload. but use DOI or PII from XML for filename.
+		console.log('    MISSING In Paperchase : PMID = ' + pmid);
+		getArticleIdsFromPubMedAbstract(pmid,function(abstractIdsError, abstractIdsRes){
+			if(abstractIdsError){
+				console.error('abstractIdsError',abstractIdsError);
+				console.log('     Cannot get XML : PMID = ' + pmid); // No PMC ID to use
+			}else if(abstractIdsRes){
+				// console.log('     abstractIdsRes',abstractIdsRes);
+				getAndSavePmcXml(abstractIdsRes, journal, function(uploadXmlError,uploadXmlRes){
+					if(uploadXmlError){
+						console.error('uploadXmlError',uploadXmlError);
+						cb(true,uploadXmlError);
+					}else if(uploadXmlRes){
+						cb(null,uploadXmlRes);
+					}
+				});
+			}
+		});
+	}
 }
 
 
@@ -329,36 +323,44 @@ module.exports = {
 				return;
 			}else{
 				// First get all the PMID from PubMed via journal ISSN
-				ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
-					console.log('     Article Count: ' + list.length);
-					// list = ['21779478']; //for local testing
-					// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
-					async.mapSeries(list, function(pmid, map_cb){
-						console.log('-- PMID: ' + pmid);
-						// Now we have a list of PMID from PubMed. Now get IDs from Paperchase, paperchase_id will be used for filename. If not in DB, then the DOI or PII from the XML will be used for the filename, these are logged in console.
-						getPaperchaseArticlesAndSaveXml(journal, pmid, function(articleXmlErr, articleXmlRes){
-							if(articleXmlErr) {
-								console.log('     ERROR');
-								console.error(articleXmlErr);
-								map_cb();
-							}else{
-								// console.log('articleXmlRes',articleXmlRes);
-								map_cb(null, articleXmlRes);
+				ncbi.get_pmid_list_for_issn(journalIssn, function(err, pubMedArticles){
+					console.log('     Article Count: ' + pubMedArticles.length);
+					if(pubMedArticles){
+						// get {PMID: paperchase_id} from Paperchase DB
+						paperchase.allPmidAndPaperchaseIdPairs(journal,function(paperchaseArticlesError,paperchaseArticles){
+							if(paperchaseArticlesError){
+								console.error('paperchaseArticlesError',paperchaseArticlesError);
+							}else if(paperchaseArticles){
+								// console.log('paperchaseArticles',paperchaseArticles);
+								async.mapSeries(pubMedArticles, function(pmid, map_cb){
+									console.log('-- PMID: ' + pmid);
+									// Now we have a list of PMID from PubMed. Now get IDs from Paperchase, paperchase_id will be used for filename. If not in DB, then the DOI or PII from the XML will be used for the filename, these are logged in console.
+									getArticlesAndSaveXml(journal, pmid, paperchaseArticles, function(articleXmlErr, articleXmlRes){
+										if(articleXmlErr) {
+											console.log('     ERROR');
+											console.error(articleXmlErr);
+											map_cb();
+										}else{
+											// console.log('articleXmlRes',articleXmlRes);
+											map_cb(null, articleXmlRes);
+										}
+									});
+								}, function(err, articlesXmlList){
+									if(err) {
+										console.log('     ERROR:');
+										console.log(err);
+										cbBatch(err);
+									} else {
+										// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
+										// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
+										articlesXmlList = shared.removeEmptyFromArray(articlesXmlList);
+										console.log('articlesXmlList',articlesXmlList);
+										cbBatch(null, articlesXmlList); // remove empty before returning to Paperchase
+									}
+								});
 							}
 						});
-					}, function(err, articlesXmlList){
-						if(err) {
-							console.log('     ERROR:');
-							console.log(err);
-							cbBatch(err);
-						} else {
-							// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
-							// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
-							articlesXmlList = shared.removeEmptyFromArray(articlesXmlList);
-							console.log('articlesXmlList',articlesXmlList);
-							cbBatch(null, articlesXmlList); // remove empty before returning to Paperchase
-						}
-					});
+					}
 				});
 			}
 			db.close();
