@@ -19,21 +19,42 @@ var s3Client = s3.createClient({
 	}
 });
 
-function get_xml_string_from_url(xml_url, cb) {
-	request(xml_url, function(err, res, body) {
+function getXmlStringFromUrl(xmlUrl, cb) {
+	request(xmlUrl, function(err, res, body) {
 		cb(null, body);
 	});
 }
 
-function get_idlist_from_abstract_xml(xml_string, cb) {
-	// console.log('... get_idlist_from_abstract_xml');
+function getIdsJsonFromPubMedXml(xml_string, cb) {
+	// console.log('... getIdsFromPubMedXml');
 	xml2js.parseString(xml_string, function(parse_err, parse_res) {
 		var idList = parse_res.PubmedArticleSet.PubmedArticle[0].PubmedData[0].ArticleIdList[0].ArticleId;
 		formatIdList(idList,cb);
 	});
 }
 
+function getIdsJsonFromPmcXml(xmlString, cb) {
+	// console.log('... getIdsJsonFromPmcXml');
+	xml2js.parseString(xmlString, function(parseError, parseRes) {
+		if(parseError){
+			console.error('parseError',parseError);
+		}else if(parseRes){
+			var idList = parseRes['pmc-articleset']['article'][0]['front'][0]['article-meta'][0]['article-id'];
+			// Get the JSON is the schema we want.
+			idList = massagePmcIdList(idList,function(massageError,massageRes){
+				if(massageError){
+					console.error('massageError',massageError);
+					cb(null);
+				}else if(massageRes){
+					cb(null,massageRes);
+				}
+			});
+		}
+	});
+}
+
 function formatIdList(idList,cb){
+	// console.log('..formatIdList',idList);
 	var idObject = {};
 	for(var i=0; i<idList.length ; i++){
 		var id,
@@ -49,11 +70,41 @@ function formatIdList(idList,cb){
 }
 
 function massage_articleid_list(idlist, cb) {
-	// console.log('... massage_articleid_list');
+	// console.log('... massage_articleid_list ');
+	// console.log(idlist);
 	async.map(idlist, function(id, map_cb){
 		map_cb(null, {type: id.$.IdType, id: id._});
 	}, function(err, res){
+		// console.log(res);
 		cb(null, res);
+	});
+}
+
+function massagePmcIdList(idlist, cb) {
+	// console.log('... massagePmcIdList ',idlist);
+	async.map(idlist, function(id, map_cb){
+		var typeObj = {};
+		var type = id['$']['pub-id-type'];
+		typeObj['type'] = type;
+		typeObj['id'] = id._;
+		map_cb(null, typeObj);
+	}, function(err, idList){
+		// console.log('idList',idList);
+		if(err){
+			console.error('Massage PMC ID list error',err);
+		}else if(idList){
+			var idObject = {};
+			for(var i=0; i<idList.length ; i++){
+				var id,
+					idType,
+					idValue;
+				id = idList[i];
+				idType = id['type'];
+				idValue = id['id'];
+				idObject[idType] = idValue;
+			}
+			cb(null,idObject);
+		}
 	});
 }
 
@@ -122,57 +173,144 @@ function getPiiFromIdList(idlist, cb) {
 	});
 }
 
-function getAndSavePmcXml(paperchaseIdList, journal, cb){
-	// PMC ID and PII exist, now query PMC to get Full Text XML
-	// XML full text filename based on PII.
-	// paperchaseId = paperchaseId.replace(/\//g,'_');
-	var fullTextXmlFilename = paperchaseIdList.paperchase_id + '.xml';
-	if(paperchaseIdList.pmc){
-		var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + paperchaseIdList.pmc;
-		console.log('     Upload: ' + fullTextXmlFilename + '. PMID: ' + paperchaseIdList.pmid + '. PMC XML: ' + full_xml_url);
-		get_xml_string_from_url(full_xml_url, function(full_xml_err, full_xml_body){
+function getPubMedAbstractXml(pmid,cb){
+	console.log('... getPubMedAbstractXml : ' + pmid);
+	var abstractUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pubmed&report=xml&id=' + pmid;
+	getXmlStringFromUrl(abstractUrl, function(xmlAbstractError,xmlAbstractRes){
+		if(xmlAbstractError){
+			console.error('xmlAbstractError',xmlAbstractError);
+			cb(xmlAbstractError);
+		}else if(xmlAbstractRes){
+			cb(null,xmlAbstractRes);
+		}
+	})
+}
+
+function getArticleIdsFromPubMedAbstract(pmid,cb){
+	console.log('... getArticleIdsFromPubMedAbstract : PMID ' + pmid );
+	getPubMedAbstractXml(pmid,function(abstarctError,abstractRes){
+		if(abstarctError){
+			console.log('     Cannot get abstarct : PMID = ' + pmid);
+			console.error('abstarctError',abstarctError);
+		}else if(abstractRes){
+			// now we have the abstract XML string. Get the IDs
+			getIdsJsonFromPubMedXml(abstractRes,function(idsJsonError,idsJsonRes){
+				if(idsJsonError){
+					console.error('idsJsonError',idsJsonError);
+				}else if(idsJsonRes){
+					// console.log('idsJsonRes',idsJsonRes);
+					cb(null,idsJsonRes);
+				}
+			});
+		}
+	});
+}
+
+function verifyFullTextXml(xmlString, cb){
+	// console.log('..verifyFullTextXml');
+	getIdsJsonFromPmcXml(xmlString,function(error,res){
+		if(error){
+			console.error('IDS from PMC',error);
+			cb(null);
+		}else if(res){
+			cb(null,res); //if there are IDs then it is valid XML. There will be at least PMC ID if this is real full text XML.
+		}
+	});
+}
+
+function getAndSavePmcXml(articleIds, journal, cb){
+	console.log('... getAndSavePmcXml :  PMC' + articleIds.pmc);
+	// Query PMC to get Full Text XML
+	// XML full text filename based on paperchase_id.
+	var fullTextXmlFilename;
+	if(articleIds.paperchase_id){
+		fullTextXmlFilename = articleIds.paperchase_id + '.xml';
+	}
+	if(articleIds.pmc){
+		var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + articleIds.pmc;
+		// console.log('     Upload: ' + fullTextXmlFilename + '. PMID: ' + articleIds.pmid + '. PMC XML: ' + full_xml_url);
+		getXmlStringFromUrl(full_xml_url, function(full_xml_err, full_xml_body){
 			async.series([
 				function(scb) {
+					// Verify that it is full text XML. Because we will still get XML if <Code>AccessDenied</Code>
+					// If no paperchase_id, then use DOI or PII in XML, if present, for filename. Otherwise do not upload.
 					// Upload Full Text XML
-					upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
+					verifyFullTextXml(full_xml_body,function(xmlVerifiedError,xmlVerifiedRes){
+						if(xmlVerifiedError){
+							console.error('xmlVerifiedError',xmlVerifiedError);
+						}else if(xmlVerifiedRes){
+							if(!fullTextXmlFilename){
+								// console.log('xmlVerifiedRes',xmlVerifiedRes);
+								// not in Paperchase DB. If the xmlVerifiedRes has PII or DOI then use this to create the filename.
+								if(xmlVerifiedRes.pii){
+									fullTextXmlFilename = xmlVerifiedRes.pii.replace(/\//g,'_') + '.xml';
+								}else if(xmlVerifiedRes.doi){
+									fullTextXmlFilename = xmlVerifiedRes.doi.replace(/\//g,'_') + '.xml';
+								}else{
+									fullTextXmlFilename = 'PMC' + xmlVerifiedRes.pmc + '.xml';
+									console.log('    Uploading XML as PMC ID filename: ' + fullTextXmlFilename);
+								}
+							}
+							if(fullTextXmlFilename){
+								// upload_xml_string_as_file_to_s3(journal, full_xml_body, fullTextXmlFilename, scb);
+							}
+						}
+					});
 				}
 			],function(series_err, series_res){
 				if(series_err) {
-					console.error(series_err);
+					console.error('series_err',series_err);
 					cb(series_err);
 				} else {
-					var pair = {
-						paperchase_id: paperchaseIdList.paperchase_id,
-						pmid: paperchaseIdList.pmid,
-						full_xml_url: series_res[0]
-					};
+					articleIds.uploaded = true;
+					articleIds.full_xml = series_res[0];
 					console.log('     Upload success: ' + series_res[0]);
-					// console.log(pair);
-					cb(null, pair);
+					cb(null, articleIds);
 				}
 			});
 		});
 	}else{
+		// cannot get Full Text without a PMC ID
 		cb(null,null);
 	}
 }
 
-function get_and_save_article_xml(journal, pmid, cb) {
-	// console.log('... get_and_save_article_xml : ' + pmid);
+function getPaperchaseArticlesAndSaveXml(journal, pmid, cb) {
+	console.log('... getPaperchaseArticlesAndSaveXml : PMID ' + pmid);
+	var articleIds;
 	paperchase.getArticlePaperchaseIdsViaPmid(pmid,journal,function(paperchaseIdError,paperchaseIdList){
 		if(paperchaseIdError){
 			console.error('paperchaseIdError',paperchaseIdError);
 		}else if(paperchaseIdList){
 			getAndSavePmcXml(paperchaseIdList, journal, function(uploadXmlError,uploadXmlRes){
-				if(uploadXmlError){
-					console.error('uploadXmlError',uploadXmlError);
-				}else if(uploadXmlRes){
-					cb(null,uploadXmlRes);
+						if(uploadXmlError){
+							console.error('uploadXmlError',uploadXmlError);
+							cb(true,uploadXmlError);
+						}else if(uploadXmlRes){
+							cb(null,uploadXmlRes);
+						}
+			});
+		}else if(!paperchaseIdList){
+			// article NOT found in Paperchase DB
+			// Query PubMed for ID List
+			// still go ahead and upload. but use DOI or PII from XML for filename.
+			console.log('    MISSING In Paperchase : PMID = ' + pmid);
+			getArticleIdsFromPubMedAbstract(pmid,function(abstractIdsError, abstractIdsRes){
+				if(abstractIdsError){
+					console.error('abstractIdsError',abstractIdsError);
+					console.log('     Cannot get XML : PMID = ' + pmid); // No PMC ID to use
+				}else if(abstractIdsRes){
+					// console.log('     abstractIdsRes',abstractIdsRes);
+					getAndSavePmcXml(abstractIdsRes, journal, function(uploadXmlError,uploadXmlRes){
+						if(uploadXmlError){
+							console.error('uploadXmlError',uploadXmlError);
+							cb(true,uploadXmlError);
+						}else if(uploadXmlRes){
+							cb(null,uploadXmlRes);
+						}
+					});
 				}
 			});
-		}else{
-			console.log('     MISSING Paperchase ID : PMID = ' + pmid);
-			cb(null,null);
 		}
 	});
 }
@@ -190,21 +328,21 @@ module.exports = {
 				cb(err);
 				return;
 			}else{
-				// var dbCollection = db.collection('xml');
+				// First get all the PMID from PubMed via journal ISSN
 				ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
 					console.log('     Article Count: ' + list.length);
 					// list = ['21779478']; //for local testing
 					// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
 					async.mapSeries(list, function(pmid, map_cb){
 						console.log('---- PMID: ' + pmid);
-						// Using PMID, retrieve abstract XML from PubMed and PMC ID, then if PMC ID retrieve full text XML
-						get_and_save_article_xml(journal, pmid, function(articleXmlErr, articleXmlRes){
+						// Now we have a list of PMID from PubMed. Now get IDs from Paperchase, paperchase_id will be used for filename. If not in DB, then the DOI or PII from the XML will be used for the filename, these are logged in console.
+						getPaperchaseArticlesAndSaveXml(journal, pmid, function(articleXmlErr, articleXmlRes){
 							if(articleXmlErr) {
 								console.log('     ERROR');
 								console.error(articleXmlErr);
 								map_cb();
 							}else{
-								// console.log('articleXmlRes');console.log(articleXmlRes);
+								// console.log('articleXmlRes',articleXmlRes);
 								map_cb(null, articleXmlRes);
 							}
 						});

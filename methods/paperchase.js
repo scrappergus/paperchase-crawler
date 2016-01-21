@@ -88,8 +88,8 @@ paperchase.insertArticle = function (articleData,journal,cb) {
 	});
 }
 
-paperchase.allArticlesIds = function(journal,cb){
-	console.log('...allArticlesIds ' + journal);
+paperchase.allArticles = function(journal,cb){
+	console.log('...allArticles ' + journal);
 	var dbUrl = journalSettings[journal].dbUrl;
 	var dbName = journalSettings[journal]['mongo']['name'];
 	var dbUser = journalSettings[journal]['mongo']['user'];
@@ -202,7 +202,7 @@ paperchase.getArticlePaperchaseIdsViaPmid = function(pmid,journal,cb){
 							// console.log('findResult',findResult);
 							cb(null,findResult.ids);
 						}else{
-							console.log('Could Not find PMID ' + pmid + ' in the Paperchase DB');
+							// console.log('Could Not find PMID ' + pmid + ' in the Paperchase DB');
 							cb(null,null); // not found in DB
 						}
 					})

@@ -161,7 +161,7 @@ app.get('/doi_status/:journalname/', function(req, res) {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	var journalName = req.params.journalname;
 	console.log('...fetching status for : ' + journalName);
-	var journalPiiList = paperchase.allArticlesIds(journalName, function(articlesError, articles) {
+	var journalPiiList = paperchase.allArticles(journalName, function(articlesError, articles) {
 		if(articlesError){
 			console.error(articlesError);
 			res.send('ERROR : ' + JSON.stringify(articlesError));
@@ -334,9 +334,6 @@ app.get('/articles_epub_legacy/:journalname',function(req, res) {
 		}
 	});
 });
-
-
-
 
 app.listen(4932, function(){
 
