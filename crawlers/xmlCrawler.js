@@ -219,14 +219,15 @@ function verifyFullTextXml(xmlString, cb){
 }
 
 function getAndSavePmcXml(articleIds, journal, cb){
-	// console.log('... getAndSavePmcXml :  PMC' + articleIds.pmc);
-	// Query PMC to get Full Text XML
-	// XML full text filename based on paperchase_id.
-	var fullTextXmlFilename;
-	if(articleIds.paperchase_id){
-		fullTextXmlFilename = articleIds.paperchase_id + '.xml';
-	}
 	if(articleIds.pmc){
+		console.log('... getAndSavePmcXml :  PMC ' + articleIds.pmc);
+		// Query PMC to get Full Text XML
+		// XML full text filename based on paperchase_id.
+		var fullTextXmlFilename;
+		if(articleIds.paperchase_id){
+			fullTextXmlFilename = articleIds.paperchase_id + '.xml';
+		}
+
 		var full_xml_url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + articleIds.pmc;
 		// console.log('     Upload: ' + fullTextXmlFilename + '. PMID: ' + articleIds.pmid + '. PMC XML: ' + full_xml_url);
 		getXmlStringFromUrl(full_xml_url, function(full_xml_err, full_xml_body){
@@ -275,7 +276,7 @@ function getAndSavePmcXml(articleIds, journal, cb){
 }
 
 function getArticlesAndSaveXml(journal, pmid, paperchaseArticles, cb) {
-	var articleIds;
+	//paperchaseArticles is used to match PMID to paperchase data
 	if(paperchaseArticles[pmid]){
 		getAndSavePmcXml(paperchaseArticles[pmid], journal, function(uploadXmlError,uploadXmlRes){
 			if(uploadXmlError){
@@ -283,6 +284,8 @@ function getArticlesAndSaveXml(journal, pmid, paperchaseArticles, cb) {
 				cb(true,uploadXmlError);
 			}else if(uploadXmlRes){
 				cb(null,uploadXmlRes);
+			}else{
+				cb(null);
 			}
 		});
 	}else{
@@ -294,7 +297,7 @@ function getArticlesAndSaveXml(journal, pmid, paperchaseArticles, cb) {
 			if(abstractIdsError){
 				console.error('abstractIdsError',abstractIdsError);
 				console.log('     Cannot get XML : PMID = ' + pmid); // No PMC ID to use
-			}else if(abstractIdsRes){
+			}else if(abstractIdsRes && abstractIdsRes.pmc){
 				// console.log('     abstractIdsRes',abstractIdsRes);
 				getAndSavePmcXml(abstractIdsRes, journal, function(uploadXmlError,uploadXmlRes){
 					if(uploadXmlError){
@@ -302,6 +305,8 @@ function getArticlesAndSaveXml(journal, pmid, paperchaseArticles, cb) {
 						cb(true,uploadXmlError);
 					}else if(uploadXmlRes){
 						cb(null,uploadXmlRes);
+					}else{
+						cb(null);
 					}
 				});
 			}
