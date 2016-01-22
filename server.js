@@ -300,22 +300,27 @@ app.get('/initiate_articles_collection/:journalname',function(req, res) {
 		}else if(pubMedIdsAndTitles){
 			// res.send(pubMedIdsAndTitles);
 			// we have all the titles/pmid from PubMed. Now query the production MySQL DB
-			legacy.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
-				if(mysqlErr){
-					console.error('ERROR',mysqlErr);
-				}else if(productionArticles){
-					// now we have PII/title via production AND PMID/title from PubMed. Now compare titles to pair PII to PMID
-					// loop throug PubMed array, because this will have less than production DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
-					shared.matchPmidAndPii(pubMedIdsAndTitles,productionArticles,journalName,function(matchError,piiPmidPairs){
-						if(matchError){
-							console.error(matchError);
-						}else if(piiPmidPairs){
-							// console.log('piiPmidPairs',piiPmidPairs)
-							res.send(piiPmidPairs);
-						}
-					})
-				}
-			})
+			if(journalSettings.mysql){ // legacy DB
+				legacy.getAllArticlesIdAndTitle(journalName, function(productionArticles, mysqlErr ){
+					if(mysqlErr){
+						console.error('ERROR',mysqlErr);
+					}else if(productionArticles){
+						// now we have PII/title via production AND PMID/title from PubMed. Now compare titles to pair PII to PMID
+						// loop throug PubMed array, because this will have less than production DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
+						shared.matchPmidAndPii(pubMedIdsAndTitles,productionArticles,journalName,function(matchError,piiPmidPairs){
+							if(matchError){
+								console.error(matchError);
+							}else if(piiPmidPairs){
+								// console.log('piiPmidPairs',piiPmidPairs)
+								res.send(piiPmidPairs);
+							}
+						})
+					}
+				})
+			}else{
+				res.send(pubMedIdsAndTitles); // No Legacy DB. Use PubMed to setup articles collection
+			}
+
 		}
 	});
 });
