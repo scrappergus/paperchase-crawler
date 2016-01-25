@@ -180,6 +180,14 @@ app.get('/doi_status/:journalname/', function(req, res) {
 						registeredRes[registeredResIdx]['paperchase'] = doiTracker[doi];
 					}
 					res.send(registeredRes);
+				}else{
+					var paperchaseArticles = [];
+					for(var artIdx = 0 ; artIdx < articles.length ; artIdx++){
+						var paperchaseArticleObj = {};
+						paperchaseArticleObj.paperchase = articles[artIdx];
+						paperchaseArticles.push(paperchaseArticleObj);
+					}
+					res.send(paperchaseArticles); // just end paperchase articles back. cannot determine if registered
 				}
 			});
 		}
