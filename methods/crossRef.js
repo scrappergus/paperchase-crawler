@@ -15,19 +15,24 @@ crossRef.allArticlesCheck = function(journalName,articles,cb){
 		if(articles[a]['ids']['doi']){
 			doiTracker[articles[a]['ids']['doi']] = articles[a];
 			doiUrlList.push(articles[a]['ids']['doi']);
-		}else if(articles[a]['ids']['pii']){
+		}else if(config.journalSettings[journalName]['doi'] && articles[a]['ids']['pii']){
 			doiTracker[crossRef.doiUrl(articles[a]['ids']['pii'],journalName)] = articles[a];
 			doiUrlList.push(crossRef.doiUrl(articles[a]['ids']['pii'],journalName)); // use PII to construct the DOI
 		}
 	}
-	async.map(doiUrlList, crossRef.registered, function(err, registered) {
-		if(err){
-			console.error('doiUrlList', err);
-			cb(true,'Could not check articles');
-		}else if (registered) {
-			cb(null,registered,doiTracker);
-		}
-	});
+	if(doiUrlList.length > 0){
+		async.map(doiUrlList, crossRef.registered, function(err, registered) {
+			if(err){
+				console.error('doiUrlList', err);
+				cb(true,'Could not check articles');
+			}else if (registered) {
+				cb(null,registered,doiTracker);
+			}
+		});
+	}else{
+		console.log('CANNOT get DOI. No DOI config stored and no DOI in article docs');
+		cb(null,null);
+	}
 }
 
 crossRef.registered = function(doiUrl, cb){
