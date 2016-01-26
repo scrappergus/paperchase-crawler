@@ -90,6 +90,7 @@ paperchase.insertArticle = function (articleData,journal,cb) {
 
 paperchase.allArticles = function(journal,cb){
 	console.log('...allArticles ' + journal);
+	var journalPublisher = journalSettings[journal]['publisher'];
 	var dbUrl = journalSettings[journal].dbUrl;
 	var dbName = journalSettings[journal]['mongo']['name'];
 	var dbUser = journalSettings[journal]['mongo']['user'];
@@ -111,7 +112,11 @@ paperchase.allArticles = function(journal,cb){
 					console.error(authenticateError);
 				}else if(userAuthenticated){
 					var articleCount = 0 ;
-					db.collection('articles').find().toArray(function(articlesErr, articles){
+					var findQuery = {};
+					if(journalPublisher){
+						findQuery = {publisher : journalPublisher}
+					}
+					db.collection('articles').find(findQuery).toArray(function(articlesErr, articles){
 						// do something with items
 						if(articlesErr){
 							// console.error(articlesErr);
