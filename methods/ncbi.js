@@ -146,6 +146,47 @@ var ncbi = {
 					}
 				});
 			});
+	},
+	getPmcPdfUrl: function(ids, cb){
+		// via PMC
+		// console.log('...getPmcPdfUrl: '+ JSON.stringify(ids));
+		if(ids.pmc && ids.pii){
+			if(ids.pmc.indexOf('PMC') == -1){
+				ids.pmc = 'PMC' + ids.pmc;
+				var pdfUrl = 'http://www.ncbi.nlm.nih.gov/pmc/articles/' + ids.pmc + '/pdf/' + ids.pii + '.pdf';
+				cb(null, pdfUrl);
+			}else{
+				cb(null);
+			}
+		}else{
+			console.log('MISSING IDs')
+			cb(true);
+		}
+	},
+	getPmcPdf: function(ids,cb){
+		// via PMC
+		console.log('...getPdfViaIds: '+ JSON.stringify(ids));
+		ncbi.getPmcPdfUrl(ids,function(urlErr,pdfUrl){
+			if(urlErr){
+				console.error('urlErr');
+				cb(urlErr);
+			}else if(pdfUrl){
+				// console.log('pdfUrl',pdfUrl);
+				request({url: pdfUrl, encoding: 'binary'}, function(pdfErr, response, body){
+					if(pdfErr) {
+						cb(pdfErr);
+					}else if(response){
+						// TODO. If redirect, follow.
+						// if(response.headers.location != pdfUrl){
+						// 	ncbi.getPmcPdf()
+						// }
+						// // var pdfParts = [];
+						// console.log(response.headers['content-type']);
+						cb(null, body);
+					}
+				});
+			}
+		});
 	}
 }
 
