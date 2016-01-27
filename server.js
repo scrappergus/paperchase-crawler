@@ -8,6 +8,7 @@ var config = require('./config');
 var shared = require('./methods/shared');
 var journalSettings = config.journalSettings;
 var xmlCrawler = require('./crawlers/xmlCrawler');
+var pdfCrawler = require('./crawlers/pdfCrawler');
 var ncbi = require('./methods/ncbi');
 var legacy = require('./methods/legacy');
 var paperchase = require('./methods/paperchase');
@@ -142,7 +143,7 @@ function mongo_query(journal, collection_name, query, cb) {
 
 // XML
 // ---------------------------------------
-// Batch crawler to upload all journal XML to S3
+// Batch crawler to upload all journal PMC XML to S3
 app.get('/crawl_xml/:journalname/', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader("Access-Control-Allow-Origin", "*");
@@ -160,20 +161,44 @@ app.get('/crawl_xml/:journalname/', function(req, res) {
 });
 
 
+// PDF
+// ---------------------------------------
+// Batch crawler to upload all journal PDF via PMC to S3
+app.get('/crawl_pdf/:journalname/', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	console.log('.. crawl : ' + journalName);
+	pdfCrawler.batchByJournal(journalName, function(crawlPdfErr, crawlPdfRes) {
+		if(crawlPdfErr) {
+			console.error('ERROR',crawlPdfErr);
+			res.send(JSON.stringify(crawlPdfErr));
+		} else {
+			// console.log('crawlXmlRes');console.log(crawlXmlRes);
+			res.send(JSON.stringify(crawlPdfRes));
+		}
+	});
+});
+
 // DOI
 // ---------------------------------------
 // DOI Status - for ALL articles in journal
 app.get('/doi_status/:journalname/', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
-	res.setHeader("Access-Control-Allow-Origin", "*");
+	res.setHeader('Access-Control-Allow-Origin', '*');
 	var journalName = req.params.journalname;
+	var journalPublisher = journalSettings[journalName]['publisher'];
 	console.log('...fetching status for : ' + journalName);
-	var journalPiiList = paperchase.allArticles(journalName, function(articlesError, articles) {
+	var query = {};
+	var projection = {ids: true, publisher: true};
+	if(journalPublisher){
+		query = {publisher : journalPublisher}
+	}
+	var journalPiiList = paperchase.allArticles(journalName, query, projection, function(articlesError, articles) {
 		if(articlesError){
 			console.error(articlesError);
 			res.send('ERROR : ' + JSON.stringify(articlesError));
-		}
-		if(articles){
+		}else if(articles){
 			console.log('   article count = ' + articles.length);
 			crossRef.allArticlesCheck(journalName,articles,function(e,registeredRes,doiTracker){
 				if(e){
@@ -242,15 +267,14 @@ app.get('/titles/:journalname', function(req, res) {
 // ---------------------------------------
 app.get('/article_count/:journalname', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
-	res.setHeader("Access-Control-Allow-Origin", "*");
+	res.setHeader('Access-Control-Allow-Origin', '*');
 	var journalName = req.params.journalname;
 	console.log('.. article_count : ' + journalName);
 	paperchase.articleCount(journalName, function(countErr, count) {
 		if(countErr) {
 			console.error('ERROR:');
 			res.sendStatus(JSON.stringify(countErr));
-		}
-		if(count){
+		}else if(count){
 			res.sendStatus(count,200);
 		}
 	});
