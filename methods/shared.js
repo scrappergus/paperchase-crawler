@@ -1,5 +1,6 @@
 var config = require('../config');
-
+var request = require('request');
+var fs = require('fs');
 var shared = {};
 
 shared.removeEmptyFromArray = function(arr){
@@ -55,6 +56,32 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 			cb(null,piiPmidPairs,unmatched);
 		}
 	}
+}
+
+shared.getFileDataFromUrl = function(url, cb) {
+	console.log('..getFileDataFromUrl: ' + url);
+	setTimeout(function() {
+		request.get(url, function (error, response, body) {
+			if (!error && response.statusCode == 200) {
+				cb(null, body);
+			} else {
+				cb(error, "");
+			}
+		});
+	}, 2500);
+};
+
+shared.getFileExtension = function(fileName,cb){
+	console.log('..getFileExtension: '+ fileName);
+	var fileNameParts = fileName.split('.');
+	var fileNamePartsLength = fileNameParts.length;
+	cb(fileNameParts[parseInt(fileNamePartsLength-1)])
+}
+
+shared.getFilesizeInBytes = function(filePath,cb) {
+	var stats = fs.statSync(filePath)
+	var fileSizeInBytes = stats["size"]
+	cb(fileSizeInBytes);
 }
 
 
