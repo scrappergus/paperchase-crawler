@@ -31,35 +31,9 @@ module.exports = {
 			if(paperchaseArticlesError){
 				console.error('paperchaseArticlesError',paperchaseArticlesError);
 			}else if(paperchaseArticles){
-				console.log('paperchaseArticles',paperchaseArticles.length);
+				console.log('paperchaseArticles count = ',paperchaseArticles.length);
 				var failed = [];
 				var success = [];
-				// paperchaseArticles.map(function(article){
-				// 	ncbi.getPmcPdf(article.ids, function(errorPdf, resultPdfData){
-				// 		if(errorPdf){
-				// 			console.error('getPmcPdf');
-				// 			// cb(errorPdf);
-				// 			failed.push(article.ids);
-				// 		}else if(resultPdfData){
-				// 			// console.log('pdfUrl',pdfUrl);
-				// 			var fileName = article.ids.paperchase_id + '.pdf';
-				// 			assets.saveLocallyAndUploadFile(journal, fileName, resultPdfData, s3Folder, function(pdfUploadError,pdfUploadRes){
-				// 				if(pdfUploadError){
-				// 					console.error('pdfUploadError');
-				// 					// cb(pdfUploadError);
-				// 					failed.push(article.ids);
-				// 				}else if(pdfUploadRes){
-				// 					success.push(pdfUploadRes);
-				// 					mapCb(null,pdfUploadRes);
-				// 					// console.log('pdfUploadRes',pdfUploadRes);
-				// 					// cb(null,pdfUploadRes);
-				// 				}
-				// 			});
-				// 		}else{
-				// 			failed.push(articleIds);
-				// 		}
-				// 	});
-				// });
 				async.mapSeries(paperchaseArticles, function(article,mapCb){
 					ncbi.getPmcPdf(article.ids, function(errorPdf, resultPdfData){
 						if(errorPdf){
@@ -75,7 +49,8 @@ module.exports = {
 									mapCb();
 								}else if(pdfUploadRes){
 									// success.push(pdfUploadRes);
-									mapCb(null,pdfUploadRes);
+									article.pdf_url = pdfUploadRes;
+									mapCb(null,article);
 									// console.log('pdfUploadRes',pdfUploadRes);
 									// cb(null,pdfUploadRes);
 								}else{
@@ -85,7 +60,8 @@ module.exports = {
 						}
 					});
 				},function(error,result){
-
+					console.log('DONE crawling PDFs');
+					cbBatch(null,result);
 				});
 
 			}
