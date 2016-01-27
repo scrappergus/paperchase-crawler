@@ -77,7 +77,7 @@ crossRef.registered = function(doiUrl, cb){
 			console.error(doiUrl, 'Cannot determine if registered');
 		}
 		if(connectionRefused){
-			// if the publisher server refused connection then retry.
+			// if the CrossRef server refused connection then retry.
 			crossRef.registered(doiUrl,cb,function(e,r){
 				if(e){
 
