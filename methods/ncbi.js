@@ -19,6 +19,7 @@ var ncbi = {
 					else {
 						var pmidList = parseRes.eSearchResult.IdList[0].Id;
 						// console.log(JSON.stringify(pmidList));
+						// cb(null, pmidList.slice(0,10));
 						cb(null, pmidList);
 					}
 				});
@@ -176,12 +177,7 @@ var ncbi = {
 					if(pdfErr) {
 						cb(pdfErr);
 					}else if(response){
-						// TODO. If redirect, follow.
-						// if(response.headers.location != pdfUrl){
-						// 	ncbi.getPmcPdf()
-						// }
-						// // var pdfParts = [];
-						// console.log(response.headers['content-type']);
+						// console.log('..... ' + pdfUrl + ' : ' + response.headers['content-type']);
 						cb(null, body);
 					}
 				});
