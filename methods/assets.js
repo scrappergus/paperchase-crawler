@@ -3,7 +3,8 @@ var config = require('../config');
 var shared = require('../methods/shared');
 var request = require('request').defaults({ encoding: null });
 var fs = require('fs');
-var s3 = require('s3');
+// var s3 = require('s3');
+var s3 = require('node-s3-client');
 var s3Client = s3.createClient({
 	s3Options: {
 		accessKeyId: config.s3.key,
@@ -61,26 +62,31 @@ var assets = {
 		console.log('..uploadFileToS3: ' + fileName);
 		var bucket = config.s3.bucket + journal;
 		var uploader = s3Client.uploadFile({
+			s3RetryCount: 10,
 			localFile: localPath,
+			s3RetryDelay: 5000,
+			multipartUploadThreshold: 90971520,
 			s3Params: {
 				Bucket: bucket,
 				Key: bucketFolder + '/' + fileName
 			}
 		});
 		uploader.on('error', function(err) {
-			console.error('ERROR');
-			console.error(err);
+			console.error('S3 Upload ERROR',err);
 			cb(err)
 		});
 		uploader.on('progress', function() {
-			// console.log('.....'+xml_filename+' progress:', uploader.progressTotal);
-			console.log('..... '+fileName+' progress:', Math.round(uploader.progressAmount / uploader.progressTotal * 100) + '% done');
+			// console.log('..... '+fileName+' progress: ' + uploader.progressTotal + ' ' + uploader.progressAmount);
+			// console.log('..... '+fileName+' progress:', Math.round(uploader.progressAmount / uploader.progressTotal * 100) + '% done');
 		});
 		uploader.on('end', function() {
-			var s3url = s3.getPublicUrlHttp(bucket, fileName);
+			var s3url = s3.getPublicUrlHttp(bucket, fileName); // TODO: this does not include folder, so link fails.
 			console.log('..... S3 : ' + s3url);
-			cb(null, s3url);
+			cb(null, fileName);
 			fs.unlink(localPath);
+		});
+		uploader.on('error', function(err) {
+			console.error('unable to upload:', err.stack);
 		});
 	}
 };
