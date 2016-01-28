@@ -4,7 +4,6 @@ var shared = require('../methods/shared');
 var assets = require('../methods/assets');
 
 var fs = require('fs');
-var s3 = require('s3');
 var async = require('async');
 var MongoClient = require('mongodb').MongoClient;
 var xml2js = require('xml2js');
@@ -12,13 +11,6 @@ var request = require('request');
 var express = require('express');
 var journalSettings = config.journalSettings;
 var paperchase = require('../methods/paperchase');
-
-var s3Client = s3.createClient({
-	s3Options: {
-		accessKeyId: config.s3.key,
-		secretAccessKey: config.s3.secret
-	}
-});
 
 function getXmlStringFromUrl(xmlUrl, cb) {
 	request(xmlUrl, function(err, res, body) {
@@ -230,9 +222,12 @@ function getAndSavePmcXml(articleIds, journal, cb){
 					console.error('series_err',series_err);
 					cb(series_err);
 				} else {
-					articleIds.xml_url = 'http://s3-us-west-1.amazonaws.com/paperchase-' + journal + '/xml/' + series_res[0]; // TODO: S3 assets method should return public URL
+					var returnObj = {
+						ids: articleIds,
+						xml_url: 'http://s3-us-west-1.amazonaws.com/paperchase-' + journal + '/xml/' + series_res[0] // TODO: S3 assets method should return public URL
+					}
 					console.log('    Upload success: ' + series_res[0]);
-					cb(null, articleIds);
+					cb(null, returnObj);
 				}
 			});
 		});
@@ -291,53 +286,42 @@ module.exports = {
 		// This will just batch save the XML to S3. It will NOT update the Paperchase DB. It will send JSON to Paperchase to update the DB.
 		var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
-		MongoClient.connect(journalDb, function(err, db) {
-			if(err) {
-				console.error('Mongo DB connection Error');
-				cb(err);
-				return;
-			}else{
-				// First get all the PMID from PubMed via journal ISSN
-				ncbi.get_pmid_list_for_issn(journalIssn, function(err, pubMedArticles){
-					// console.log('     Article Count: ' + pubMedArticles.length);
-					if(pubMedArticles){
-						// get {PMID: paperchase_id} from Paperchase DB
-						paperchase.allPmidAndPaperchaseIdPairs(journal,function(paperchaseArticlesError,paperchaseArticles){
-							if(paperchaseArticlesError){
-								console.error('paperchaseArticlesError',paperchaseArticlesError);
-							}else if(paperchaseArticles){
-								// console.log('paperchaseArticles',paperchaseArticles);
-								async.mapSeries(pubMedArticles, function(pmid, map_cb){
-									console.log('-- PMID: ' + pmid);
-									getArticlesAndSaveXml(journal, pmid, paperchaseArticles, function(articleXmlErr, articleXmlRes){
-										if(articleXmlErr) {
-											console.log('     ERROR');
-											console.error(articleXmlErr);
-											map_cb();
-										}else{
-											console.log('articleXmlRes',articleXmlRes);
-											map_cb(null, articleXmlRes);
-										}
-									});
-								}, function(err, articlesXmlList){
-									if(err) {
-										console.log('     ERROR:');
-										console.log(err);
-										cbBatch(err);
-									} else {
-										// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
-										// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
-										articlesXmlList = shared.removeEmptyFromArray(articlesXmlList);
-										console.log('articlesXmlList',articlesXmlList);
-										cbBatch(null, articlesXmlList); // remove empty before returning to Paperchase
+		// First get all the PMID from PubMed via journal ISSN
+		ncbi.get_pmid_list_for_issn(journalIssn, function(pubMedError, pubMedArticles){
+				// console.log('     Article Count: ' + pubMedArticles.length);
+				if(pubMedArticles){
+					// get {PMID: paperchase_id} from Paperchase DB
+					paperchase.allPmidAndPaperchaseIdPairs(journal,function(paperchaseArticlesError,paperchaseArticles){
+						if(paperchaseArticlesError){
+							console.error('paperchaseArticlesError',paperchaseArticlesError);
+						}else if(paperchaseArticles){
+							// console.log('paperchaseArticles',paperchaseArticles);
+							async.mapSeries(pubMedArticles, function(pmid, map_cb){
+								console.log('-- PMID: ' + pmid);
+								getArticlesAndSaveXml(journal, pmid, paperchaseArticles, function(articleXmlErr, articleXmlRes){
+									if(articleXmlErr) {
+										console.error('     ERROR',articleXmlErr);
+										map_cb();
+									}else{
+										console.log('articleXmlRes',articleXmlRes);
+										map_cb(null, articleXmlRes);
 									}
 								});
-							}
-						});
-					}
-				});
-			}
-			db.close();
+							}, function(mapErr, articlesXmlList){
+								if(mapErr) {
+									console.error('     ERROR:', mapErr);
+									cbBatch(mapErr);
+								} else {
+									// articlesXmlList = list of all XML uploaded to S3. Contains article IDs and XML URLs
+									// All XML uploaded. Now return the array of articles to Paperchase to then update the DB
+									articlesXmlList = shared.removeEmptyFromArray(articlesXmlList);
+									console.log('articlesXmlList',articlesXmlList);
+									cbBatch(null, articlesXmlList); // remove empty before returning to Paperchase
+								}
+							});
+						}
+					});
+				}
 		});
 	}
 }
