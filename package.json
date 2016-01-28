@@ -1,6 +1,6 @@
 {
-  "name": "paperchase-figurecrawl",
-  "version": "0.0.1",
+  "name": "paperchase-crawler",
+  "version": "0.0.2",
   "dependencies": {
     "async": "1.4.2",
     "express": "4.13.3",
@@ -9,7 +9,7 @@
     "mongodb": "~2.0",
     "node-phantom-simple": "2.0.5",
     "request": "^2.62.0",
-    "s3": "^4.4.0",
+    "aws-sdk": "~2.2.16",
     "xml2js": "^0.4.12"
   }
 }
