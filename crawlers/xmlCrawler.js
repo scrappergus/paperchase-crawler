@@ -230,7 +230,7 @@ function getAndSavePmcXml(articleIds, journal, cb){
 					console.error('series_err',series_err);
 					cb(series_err);
 				} else {
-					articleIds.full_xml = series_res[0];
+					articleIds.xml_url = 'http://s3-us-west-1.amazonaws.com/paperchase-' + journal + '/xml/' + series_res[0]; // TODO: S3 assets method should return public URL
 					console.log('    Upload success: ' + series_res[0]);
 					cb(null, articleIds);
 				}
@@ -299,7 +299,7 @@ module.exports = {
 			}else{
 				// First get all the PMID from PubMed via journal ISSN
 				ncbi.get_pmid_list_for_issn(journalIssn, function(err, pubMedArticles){
-					console.log('     Article Count: ' + pubMedArticles.length);
+					// console.log('     Article Count: ' + pubMedArticles.length);
 					if(pubMedArticles){
 						// get {PMID: paperchase_id} from Paperchase DB
 						paperchase.allPmidAndPaperchaseIdPairs(journal,function(paperchaseArticlesError,paperchaseArticles){
@@ -309,14 +309,13 @@ module.exports = {
 								// console.log('paperchaseArticles',paperchaseArticles);
 								async.mapSeries(pubMedArticles, function(pmid, map_cb){
 									console.log('-- PMID: ' + pmid);
-									// Now we have a list of PMID from PubMed. Now get IDs from Paperchase, paperchase_id will be used for filename. If not in DB, then the DOI or PII from the XML will be used for the filename, these are logged in console.
 									getArticlesAndSaveXml(journal, pmid, paperchaseArticles, function(articleXmlErr, articleXmlRes){
 										if(articleXmlErr) {
 											console.log('     ERROR');
 											console.error(articleXmlErr);
 											map_cb();
 										}else{
-											// console.log('articleXmlRes',articleXmlRes);
+											console.log('articleXmlRes',articleXmlRes);
 											map_cb(null, articleXmlRes);
 										}
 									});
