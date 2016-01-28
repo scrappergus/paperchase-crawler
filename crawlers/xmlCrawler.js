@@ -303,7 +303,7 @@ module.exports = {
 										console.error('     ERROR',articleXmlErr);
 										map_cb();
 									}else{
-										console.log('articleXmlRes',articleXmlRes);
+										// console.log('articleXmlRes',articleXmlRes);
 										map_cb(null, articleXmlRes);
 									}
 								});
