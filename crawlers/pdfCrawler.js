@@ -31,7 +31,6 @@ module.exports = {
 			if(paperchaseArticlesError){
 				console.error('paperchaseArticlesError',paperchaseArticlesError);
 			}else if(paperchaseArticles){
-				console.log('paperchaseArticles count = ',paperchaseArticles.length);
 				var failed = [];
 				var success = [];
 				async.mapSeries(paperchaseArticles, function(article,mapCb){
@@ -46,15 +45,16 @@ module.exports = {
 									console.error('pdfUploadError');
 									// cb(pdfUploadError);
 									// failed.push(article.ids);
-									mapCb();
+									mapCb(pdfUploadError);
 								}else if(pdfUploadRes){
 									// success.push(pdfUploadRes);
-									article.pdf_url = pdfUploadRes;
+									delete article._id; // remove the article Mongo ID. The response will be inserted into the PDF collection, do not want ID confusion.
+									article.pdf_url =  'http://s3-us-west-1.amazonaws.com/paperchase-' + journal + '/pdf/' + pdfUploadRes; // TODO: method uploadFileToS3 should return public URL but the folder is not being included.
 									mapCb(null,article);
 									// console.log('pdfUploadRes',pdfUploadRes);
 									// cb(null,pdfUploadRes);
 								}else{
-									mapCb();
+									mapCb('Unable to save file locally and upload to S3');
 								}
 							});
 						}
