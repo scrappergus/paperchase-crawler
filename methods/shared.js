@@ -59,7 +59,7 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 }
 
 shared.getFileDataFromUrl = function(url, cb) {
-	console.log('..getFileDataFromUrl: ' + url);
+	// console.log('..getFileDataFromUrl: ' + url);
 	setTimeout(function() {
 		request.get(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
@@ -72,7 +72,7 @@ shared.getFileDataFromUrl = function(url, cb) {
 };
 
 shared.getFileExtension = function(fileName,cb){
-	console.log('..getFileExtension: '+ fileName);
+	// console.log('..getFileExtension: '+ fileName);
 	var fileNameParts = fileName.split('.');
 	var fileNamePartsLength = fileNameParts.length;
 	cb(fileNameParts[parseInt(fileNamePartsLength-1)])
@@ -80,7 +80,7 @@ shared.getFileExtension = function(fileName,cb){
 
 shared.getFilesizeInBytes = function(filePath,cb) {
 	var stats = fs.statSync(filePath)
-	var fileSizeInBytes = stats["size"]
+	var fileSizeInBytes = stats["size"];
 	cb(fileSizeInBytes);
 }
 
