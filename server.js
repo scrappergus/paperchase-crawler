@@ -190,7 +190,7 @@ app.get('/doi_status/:journalname/', function(req, res) {
 	var journalPublisher = journalSettings[journalName]['publisher'];
 	console.log('...fetching status for : ' + journalName);
 	var query = {};
-	var projection = {ids: true, publisher: true};
+	var projection = {ids: true, publisher: true, dates: true};
 	if(journalPublisher){
 		query = {publisher : journalPublisher}
 	}
