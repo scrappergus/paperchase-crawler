@@ -150,17 +150,21 @@ var ncbi = {
 	},
 	getPmcPdfUrl: function(ids, cb){
 		// via PMC
-		// console.log('...getPmcPdfUrl: '+ JSON.stringify(ids));
-		if(ids.pmc && ids.pii){
-			if(ids.pmc.indexOf('PMC') == -1){
-				ids.pmc = 'PMC' + ids.pmc;
-				var pdfUrl = 'http://www.ncbi.nlm.nih.gov/pmc/articles/' + ids.pmc + '/pdf/' + ids.pii + '.pdf';
+		console.log('...getPmcPdfUrl: '+ JSON.stringify(ids));
+		if(ids.pmc){
+			if(ids.pii || ids['publisher-id']){
+				var pii = ids.pii ? ids.pii : ids['publisher-id'];
+				if(ids.pmc.indexOf('PMC') == -1){
+					ids.pmc = 'PMC' + ids.pmc;
+				}
+				var pdfUrl = 'http://www.ncbi.nlm.nih.gov/pmc/articles/' + ids.pmc + '/pdf/' + pii + '.pdf';
 				cb(null, pdfUrl);
 			}else{
+				console.log('MISSING PII')
 				cb(null);
 			}
 		}else{
-			console.log('MISSING IDs')
+			console.log('MISSING PMC ID')
 			cb(true);
 		}
 	},
