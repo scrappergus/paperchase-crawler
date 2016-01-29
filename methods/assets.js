@@ -13,7 +13,7 @@ var s3Client = s3.createClient({
 });
 var assets = {
 	saveLocallyAndUploadFile: function(journal, fileName, fileData, bucketFolder, cb){
-		console.log('..saveLocallyAndUploadFile: ' + fileName);
+		// console.log('..saveLocallyAndUploadFile: ' + fileName);
 		assets.saveFileLocal(journal, fileName, fileData, bucketFolder, function(saveError,localPath){
 			if(saveError){
 				console.error('saveError');
@@ -31,7 +31,7 @@ var assets = {
 		});
 	},
 	saveFileLocal: function(journal, fileName, fileData, bucketFolder, cb){
-		console.log('..saveLocal: ' + fileName);
+		// console.log('..saveLocal: ' + fileName);
 		var tempdir = './temp';
 		var bucket = config.s3.bucket + journal;
 		if (!fs.existsSync(tempdir)){
@@ -59,7 +59,7 @@ var assets = {
 		});
 	},
 	uploadFileToS3: function(journal, fileName, localPath, bucketFolder, cb){
-		console.log('..uploadFileToS3: ' + fileName);
+		console.log('...uploadFileToS3: ' + fileName);
 		var bucket = config.s3.bucket + journal;
 		var uploader = s3Client.uploadFile({
 			s3RetryCount: 10,
