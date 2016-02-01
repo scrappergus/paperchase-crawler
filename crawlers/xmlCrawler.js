@@ -177,8 +177,7 @@ function getAndSavePmcXml(articleIds, journal, cb){
 		console.log('... getAndSavePmcXml :  PMC ' + articleIds.pmc);
 		// Query PMC to get Full Text XML
 		// XML full text filename based on paperchase Mongo ID.
-		var fullTextXmlFilename;
-			fullTextXmlFilename = articleIds._id + '.xml';
+		var fullTextXmlFilename = articleIds._id + '.xml';
 
 		var fullXmlUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + articleIds.pmc;
 		// console.log('     Upload: ' + fullTextXmlFilename + '. PMID: ' + articleIds.pmid + '. PMC XML: ' + fullXmlUrl);
