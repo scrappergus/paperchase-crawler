@@ -176,11 +176,9 @@ function getAndSavePmcXml(articleIds, journal, cb){
 	if(articleIds.pmc){
 		console.log('... getAndSavePmcXml :  PMC ' + articleIds.pmc);
 		// Query PMC to get Full Text XML
-		// XML full text filename based on paperchase_id.
+		// XML full text filename based on paperchase Mongo ID.
 		var fullTextXmlFilename;
-		if(articleIds.paperchase_id){
-			fullTextXmlFilename = articleIds.paperchase_id + '.xml';
-		}
+			fullTextXmlFilename = articleIds._id + '.xml';
 
 		var fullXmlUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + articleIds.pmc;
 		// console.log('     Upload: ' + fullTextXmlFilename + '. PMID: ' + articleIds.pmid + '. PMC XML: ' + fullXmlUrl);
@@ -191,7 +189,6 @@ function getAndSavePmcXml(articleIds, journal, cb){
 						console.error('fullXmlErr');
 					}else if(fullXmlBody){
 						// Verify that it is full text XML. Because we will still get XML if <Code>AccessDenied</Code>
-						// If no paperchase_id, then use DOI or PII in XML, if present, for filename. Otherwise do not upload.
 						// Upload Full Text XML
 						verifyFullTextXml(fullXmlBody,function(xmlVerifiedError,xmlVerifiedRes){
 							if(xmlVerifiedError){
@@ -287,10 +284,10 @@ module.exports = {
 		var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
 		// First get all the PMID from PubMed via journal ISSN
-		ncbi.get_pmid_list_for_issn(journalIssn, function(pubMedError, pubMedArticles){
+		ncbi.getPmidListForIssn(journalIssn, function(pubMedError, pubMedArticles){
 				// console.log('     Article Count: ' + pubMedArticles.length);
 				if(pubMedArticles){
-					// get {PMID: paperchase_id} from Paperchase DB
+					// get {PMID: All_Article_IDs} from Paperchase DB
 					paperchase.allPmidAndPaperchaseIdPairs(journal,function(paperchaseArticlesError,paperchaseArticles){
 						if(paperchaseArticlesError){
 							console.error('paperchaseArticlesError',paperchaseArticlesError);
