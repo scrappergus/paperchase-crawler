@@ -27,7 +27,7 @@ module.exports = {
 		var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
 		var s3Folder = 'pdf';
-		paperchase.allArticles(journal, {'ids.pmc' : {$exists:true},'ids.pii' : {$exists:true},}, {ids:true},function(paperchaseArticlesError,paperchaseArticles){
+		paperchase.allArticles(journal, {'ids.pmc' : {$exists:true}}, {ids:true},function(paperchaseArticlesError,paperchaseArticles){
 			if(paperchaseArticlesError){
 				console.error('paperchaseArticlesError',paperchaseArticlesError);
 			}else if(paperchaseArticles){
