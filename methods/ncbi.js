@@ -3,9 +3,9 @@ var xml2js = require('xml2js');
 var async = require('async');
 var shared = require('../methods/shared');
 var ncbi = {
-	get_pmid_list_for_issn: function(issn, cb) {
+	getPmidListForIssn: function(issn, cb) {
 		// via PubMed
-		// console.log('... get_pmid_list_for_issn : ' + issn);
+		// console.log('... getPmidListForIssn : ' + issn);
 		var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
 		// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=10"; // for testing locally, smaller response
 		request(pmidListUrl, function(err, res, body){
@@ -81,9 +81,9 @@ var ncbi = {
 		// var journalDb = journalSettings[journal].dbUrl,
 		journalIssn = journalSettings[journal].issn;
 		console.log('--- Begin PMID/Title Crawler : ' + journal);
-		ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
+		ncbi.getPmidListForIssn(journalIssn, function(err, list){
 			console.log('     PubMed Article Count: ' + list.length);
-			// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
+			// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated getPmidListForIssn if archive larger than 80k)
 			async.mapSeries(list, function(pmid, map_cb){
 				// console.log('---- PMID: ' + pmid);
 				// Using PMID, retrieve article Title and ID list
@@ -114,9 +114,9 @@ var ncbi = {
 		var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
 			console.log('--- Begin PMID/Title Crawler : ' + journal);
-			ncbi.get_pmid_list_for_issn(journalIssn, function(err, list){
+			ncbi.getPmidListForIssn(journalIssn, function(err, list){
 				console.log('     PubMed Article Count: ' + list.length);
-				// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated get_pmid_list_for_issn if archive larger than 80k)
+				// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated getPmidListForIssn if archive larger than 80k)
 				async.mapSeries(list, function(pmid, map_cb){
 					console.log('---- PMID: ' + pmid);
 					// Using PMID, retrieve article Title and ID list
@@ -161,7 +161,7 @@ var ncbi = {
 				cb(null, pdfUrl);
 			}else{
 				console.log('MISSING PII')
-				cb(null);
+				cb(true);
 			}
 		}else{
 			console.log('MISSING PMC ID')
@@ -170,7 +170,7 @@ var ncbi = {
 	},
 	getPmcPdf: function(ids,cb){
 		// via PMC
-		console.log('...getPdfViaIds: '+ JSON.stringify(ids));
+		// console.log('...getPdfViaIds: '+ JSON.stringify(ids));
 		ncbi.getPmcPdfUrl(ids,function(urlErr,pdfUrl){
 			if(urlErr){
 				console.error('urlErr');
