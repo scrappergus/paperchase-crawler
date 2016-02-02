@@ -427,14 +427,15 @@ app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
 								console.log('pubMedList',pubMedList);
 								if(result.paperchaseWithoutPmid){
 									for(var pcArticle=0 ; pcArticle<result.paperchaseWithoutPmid.length ; pcArticle++){
-										if(result.paperchaseWithoutPmid[pcArticle].ids && result.paperchaseWithoutPmid[pcArticle].ids.pii){
+										console.log(result.paperchaseWithoutPmid[pcArticle]);
+										if(result.paperchaseWithoutPmid[pcArticle].pii){
 											for(var pmArticle=0 ; pmArticle < pubMedList.length ; pmArticle++){
 												// TODO: more checks than just PII when article in Paperchase without
 												// PII Check
-												if(pubMedList[pmArticle].ids.pii && pubMedList[pmArticle].ids.pii == result.paperchaseWithoutPmid[pcArticle].ids.pii){
+												if(pubMedList[pmArticle].ids.pii && pubMedList[pmArticle].ids.pii == result.paperchaseWithoutPmid[pcArticle].pii){
 													// article in paperchase DB but no PMID saved
-													result.paperchaseWithoutPmid[pcArticle].ids.pmid = pubMedList[pmArticle].ids.pmid;
-													result.paperchaseWithoutPmidUpdate.push(result.paperchaseWithoutPmid[pcArticle].ids);
+													result.paperchaseWithoutPmid[pcArticle].pmid = pubMedList[pmArticle].ids.pmid;
+													result.paperchaseWithoutPmidUpdate.push(result.paperchaseWithoutPmid[pcArticle]);
 													delete pubMedList[pmArticle];
 												}
 											}
