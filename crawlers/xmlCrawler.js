@@ -177,7 +177,7 @@ function getAndSavePmcXml(articleIds, journal, cb){
 		console.log('... getAndSavePmcXml :  PMC ' + articleIds.pmc);
 		// Query PMC to get Full Text XML
 		// XML full text filename based on paperchase Mongo ID.
-		var fullTextXmlFilename = articleIds._id + '.xml';
+		var fullTextXmlFilename = articleIds.mongo_id + '.xml';
 
 		var fullXmlUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi/?db=pmc&report=xml&id=' + articleIds.pmc;
 		// console.log('     Upload: ' + fullTextXmlFilename + '. PMID: ' + articleIds.pmid + '. PMC XML: ' + fullXmlUrl);
@@ -326,13 +326,13 @@ module.exports = {
 				console.error('paperchaseError',paperchaseError);
 			}else if(paperchaseArticle){
 				// console.log('paperchaseArticle',paperchaseArticle);
-				paperchaseArticle.ids._id = paperchaseArticle._id;
+				paperchaseArticle.ids.mongo_id = paperchaseArticle._id;
 				getAndSavePmcXml(paperchaseArticle.ids, journal, function(uploadXmlError,uploadXmlRes){
 					if(uploadXmlError){
 						console.error('uploadXmlError',uploadXmlError);
-						cb(true,paperchaseArticle.ids._id);
+						cb(true,uploadXmlError);
 					}else if(uploadXmlRes){
-						cb(null,paperchaseArticle.ids._id);
+						cb(null,uploadXmlRes);
 					}else{
 						cb(null);
 					}

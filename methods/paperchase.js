@@ -138,7 +138,7 @@ var paperchase = {
 				var pairsObject = {};
 				for(var articleIdx=0 ; articleIdx < articles.length ; articleIdx++){
 					if(articles[articleIdx].ids.pmid){
-						articles[articleIdx].ids._id = articles[articleIdx]._id;
+						articles[articleIdx].ids.mongo_id = articles[articleIdx]._id;
 						pairsObject[articles[articleIdx]['ids']['pmid']] = articles[articleIdx]['ids'];
 					}
 					if(articleIdx == parseInt(articles.length - 1)){
