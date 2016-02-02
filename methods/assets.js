@@ -89,7 +89,7 @@ var assets = {
 		});
 		uploader.on('end', function() {
 			var s3url = s3.getPublicUrlHttp(bucket, fileName); // TODO: this does not include folder, so link fails.
-			// console.log('..... S3 : ' + s3url);
+			console.log('..... Uploaded: ' + fileName);
 			cb(null, fileName);
 			fs.unlink(localPath);
 		});
