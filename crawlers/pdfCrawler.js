@@ -27,13 +27,11 @@ module.exports = {
 		var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
 		var s3Folder = 'pdf';
-		paperchase.allArticles(journal, {'ids.pmc' : {$exists:true}}, {ids:true},function(paperchaseArticlesError,paperchaseArticles){
+		paperchase.allArticles(journal, {'ids.pmc' : {$exists:true},'ids.pii' : {$exists:true},}, {ids:true},function(paperchaseArticlesError,paperchaseArticles){
 			if(paperchaseArticlesError){
 				console.error('paperchaseArticlesError',paperchaseArticlesError);
 			}else if(paperchaseArticles){
 				console.log('article count = ' + paperchaseArticles.length);
-				var failed = [];
-				var success = [];
 				async.mapSeries(paperchaseArticles, function(article,mapCb){
 					var articleMongoId = article._id;
 					// article.ids.mongo_id = article._id;
@@ -47,25 +45,55 @@ module.exports = {
 							assets.saveLocallyAndUploadFile(journal, fileName, resultPdfData, s3Folder, function(pdfUploadError,pdfUploadRes){
 								if(pdfUploadError){
 									console.error('pdfUploadError');
-									// cb(pdfUploadError);
-									// failed.push(article.ids);
-									// mapCb(pdfUploadError);
 								}else if(pdfUploadRes){
-									// success.push(pdfUploadRes);
-									delete article._id; // remove the article Mongo ID. The response will be inserted into the PDF collection, do not want ID confusion.
 									article.pdf_url =  'http://s3-us-west-1.amazonaws.com/paperchase-' + journal + '/pdf/' + pdfUploadRes; // TODO: method uploadFileToS3 should return public URL but the folder is not being included.
 									mapCb(null,article);
-									// console.log('pdfUploadRes',pdfUploadRes);
-									// cb(null,pdfUploadRes);
 								}else{
 									console.error('Unable to save file locally and upload to S3');
 								}
 							});
+						}else{
+							console.log('else');
+							mapCb(null,null);
 						}
 					});
 				},function(error,result){
 					console.log('DONE crawling PDFs');
 					cbBatch(null,result);
+				});
+			}
+		});
+	},
+	getByArticle: function(journal, articleMongoId, cb){
+		// console.log('..getByArticle: ' + articleMongoId);
+		var s3Folder = 'pdf';
+		var article = {};
+		paperchase.getArticle(journal, {_id : articleMongoId}, {ids : 1}, function(paperchaseError,paperchaseArticle){
+			if(paperchaseError){
+				console.error('paperchaseError',paperchaseError);
+			}else if(paperchaseArticle){
+				article.ids = paperchaseArticle.ids;
+				article.ids.mongo_id = paperchaseArticle._id;
+				ncbi.getPmcPdf(article.ids, function(errorPdf, resultPdfData){
+					if(errorPdf){
+						// console.error('errorPdf',errorPdf);
+						cb(errorPdf);
+					}else if(resultPdfData){
+						var fileName = articleMongoId + '.pdf';
+						assets.saveLocallyAndUploadFile(journal, fileName, resultPdfData, s3Folder, function(pdfUploadError,pdfUploadRes){
+							if(pdfUploadError){
+								// console.error('pdfUploadError');
+								cb(pdfUploadError)
+							}else if(pdfUploadRes){
+								article.pdf_url =  'http://s3-us-west-1.amazonaws.com/paperchase-' + journal + '/pdf/' + pdfUploadRes; // TODO: method uploadFileToS3 should return public URL but the folder is not being included.
+								cb(null,article);
+							}else{
+								console.error('Unable to save file locally and upload to S3');
+							}
+						});
+					}else{
+						cb(null,null);
+					}
 				});
 			}
 		});

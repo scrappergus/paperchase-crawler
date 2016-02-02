@@ -197,6 +197,24 @@ app.get('/crawl_pdf/:journalname/', function(req, res) {
 		}
 	});
 });
+// Per article
+app.get('/get_article_pmc_pdf/:journalname/:articleMongoId', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	var articleMongoId = req.params.articleMongoId;
+	console.log('.. get pdf : ' + journalName + ' - ' + articleMongoId);
+	pdfCrawler.getByArticle(journalName, articleMongoId, function(crawlXmlErr, crawlPdfRes) {
+		if(crawlXmlErr) {
+			console.error('ERROR',crawlXmlErr);
+			res.send(JSON.stringify(crawlXmlErr));
+		} else {
+			// console.log('crawlXmlRes',crawlXmlRes);
+			res.send(crawlPdfRes);
+		}
+	});
+});
+
 
 // DOI
 // ---------------------------------------
