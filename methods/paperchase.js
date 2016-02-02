@@ -22,40 +22,40 @@ var paperchase = {
 			}
 		});
 	},
-	insertArticle: function (articleData,journal,cb) {
-		// console.log('..insertArticle');
-		var dbName = journalSettings[journal]['mongo']['name'];
-		var dbUser = journalSettings[journal]['mongo']['user'];
-		var dbPw = journalSettings[journal]['mongo']['password'];
-		var dbServer = journalSettings[journal]['mongo']['server'];
-		var dbPort= journalSettings[journal]['mongo']['port'];
-		var dbServer = journalSettings[journal]['mongo']['server'];
+	// insertArticle: function (articleData,journal,cb) {
+	// 	// console.log('..insertArticle');
+	// 	var dbName = journalSettings[journal]['mongo']['name'];
+	// 	var dbUser = journalSettings[journal]['mongo']['user'];
+	// 	var dbPw = journalSettings[journal]['mongo']['password'];
+	// 	var dbServer = journalSettings[journal]['mongo']['server'];
+	// 	var dbPort= journalSettings[journal]['mongo']['port'];
+	// 	var dbServer = journalSettings[journal]['mongo']['server'];
 
-		var db = new Db(dbName, new Server(dbServer, dbPort));
-		// Establish connection to db
-		db.open(function(err, db) {
-			if(err){
-				console.error('DB connection ERROR',err);
-			}else{
-				// Authenticate
-				db.authenticate(dbUser, dbPw, function(authenticateErr, authenticated) {
-					if(authenticateErr){
-						console.error('DB authenticate ERROR',authenticateErr);
-					}else if(authenticated){
-						// console.log('USER authenticated');
-						var articleCount = 0 ;
-						db.collection('articles').insert(articleData,function(errorInsert,inserted){
-							if(errorInsert){
-								console.error('ERROR inserting', errorInsert);
-							}else if(inserted){
-								cb(null,inserted);
-							}
-						});
-					}
-				});
-		    }
-		});
-	},
+	// 	var db = new Db(dbName, new Server(dbServer, dbPort));
+	// 	// Establish connection to db
+	// 	db.open(function(err, db) {
+	// 		if(err){
+	// 			console.error('DB connection ERROR',err);
+	// 		}else{
+	// 			// Authenticate
+	// 			db.authenticate(dbUser, dbPw, function(authenticateErr, authenticated) {
+	// 				if(authenticateErr){
+	// 					console.error('DB authenticate ERROR',authenticateErr);
+	// 				}else if(authenticated){
+	// 					// console.log('USER authenticated');
+	// 					var articleCount = 0 ;
+	// 					db.collection('articles').insert(articleData,function(errorInsert,inserted){
+	// 						if(errorInsert){
+	// 							console.error('ERROR inserting', errorInsert);
+	// 						}else if(inserted){
+	// 							cb(null,inserted);
+	// 						}
+	// 					});
+	// 				}
+	// 			});
+	// 	    }
+	// 	});
+	// },
 	// updateAssets: function (journal, assetType, assetData, cb) {
 	// 	console.log('..updateAssets: ' + assetType);
 	// 	// console.log('assetData, ' , assetData);
@@ -233,51 +233,52 @@ var paperchase = {
 		    }
 		});
 	},
-	articleIdsViaPmid: function(pmid, pii, journal,cb){
-		console.log('...articleUpdateViaPmid ' + pmid);
-		var dbUrl = journalSettings[journal].dbUrl;
-		var dbName = journalSettings[journal]['mongo']['name'];
-		var dbUser = journalSettings[journal]['mongo']['user'];
-		var dbPw = journalSettings[journal]['mongo']['password'];
-		var dbServer = journalSettings[journal]['mongo']['server'];
-		var dbPort= journalSettings[journal]['mongo']['port'];
-		var dbServer = journalSettings[journal]['mongo']['server'];
+	// articleIdsViaPmid: function(pmid, pii, journal,cb){
+	// 	// NOT USED
+	// 	console.log('...articleUpdateViaPmid ' + pmid);
+	// 	var dbUrl = journalSettings[journal].dbUrl;
+	// 	var dbName = journalSettings[journal]['mongo']['name'];
+	// 	var dbUser = journalSettings[journal]['mongo']['user'];
+	// 	var dbPw = journalSettings[journal]['mongo']['password'];
+	// 	var dbServer = journalSettings[journal]['mongo']['server'];
+	// 	var dbPort= journalSettings[journal]['mongo']['port'];
+	// 	var dbServer = journalSettings[journal]['mongo']['server'];
 
-		var db = new Db(dbName, new Server(dbServer, dbPort));
-		// Establish connection to db
-		db.open(function(err, db) {
-		    if(err){
-		    	console.error('DB Connection ERROR. Could not get list of PII in journal',err);
-				cb(err);
-		    }else{
-		      // Authenticate
-				db.authenticate(dbUser, dbPw, function(authenticateError, userAuthenticated) {
-					if(authenticateError){
-						console.error('User not authenticated',authenticateError);
-					}else if(userAuthenticated){
-						var art = db.collection('articles').findOne({'ids.pmid' : pmid});
-						if(art.ids){
-							art.ids.pii = pii;
-						}else{
-							art.ids = {};
-							art.ids.pii = pii;
-						}
-						if(art){
-							db.collection('articles').update({'_id' : art._id}, art,function(updateError,updated){
-								if(updateError){
-									console.error('updateError : ' + pmid, updateError);
-									cb(updateError);
-								}else if(updated){
-									console.log('updated PMID ' + pmid);
-									cb(null,updated);
-								}
-							});
-						}
-					}
-				});
-		    }
-		});
-	}
+	// 	var db = new Db(dbName, new Server(dbServer, dbPort));
+	// 	// Establish connection to db
+	// 	db.open(function(err, db) {
+	// 	    if(err){
+	// 	    	console.error('DB Connection ERROR. Could not get list of PII in journal',err);
+	// 			cb(err);
+	// 	    }else{
+	// 	      // Authenticate
+	// 			db.authenticate(dbUser, dbPw, function(authenticateError, userAuthenticated) {
+	// 				if(authenticateError){
+	// 					console.error('User not authenticated',authenticateError);
+	// 				}else if(userAuthenticated){
+	// 					var art = db.collection('articles').findOne({'ids.pmid' : pmid});
+	// 					if(art.ids){
+	// 						art.ids.pii = pii;
+	// 					}else{
+	// 						art.ids = {};
+	// 						art.ids.pii = pii;
+	// 					}
+	// 					if(art){
+	// 						db.collection('articles').update({'_id' : art._id}, art,function(updateError,updated){
+	// 							if(updateError){
+	// 								console.error('updateError : ' + pmid, updateError);
+	// 								cb(updateError);
+	// 							}else if(updated){
+	// 								console.log('updated PMID ' + pmid);
+	// 								cb(null,updated);
+	// 							}
+	// 						});
+	// 					}
+	// 				}
+	// 			});
+	// 	    }
+	// 	});
+	// }
 };
 
 module.exports = paperchase;
