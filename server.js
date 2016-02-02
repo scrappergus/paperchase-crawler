@@ -159,6 +159,23 @@ app.get('/crawl_xml/:journalname/', function(req, res) {
 		}
 	});
 });
+// Per article, get PMC article XML
+app.get('/get_article_pmc_xml/:journalname/:articleMongoId', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	var articleMongoId = req.params.articleMongoId;
+	console.log('.. get xml : ' + journalName + ' - ' + articleMongoId);
+	xmlCrawler.getByArticle(journalName, articleMongoId, function(crawlXmlErr, crawlXmlRes) {
+		if(crawlXmlErr) {
+			console.error('ERROR',crawlXmlErr);
+			res.send(JSON.stringify(crawlXmlErr));
+		} else {
+			// console.log('crawlXmlRes');console.log(crawlXmlRes);
+			res.send(JSON.stringify(crawlXmlRes));
+		}
+	});
+});
 
 
 // PDF
