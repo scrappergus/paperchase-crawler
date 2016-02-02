@@ -193,22 +193,7 @@ function getAndSavePmcXml(articleIds, journal, cb){
 							if(xmlVerifiedError){
 								console.error('xmlVerifiedError',xmlVerifiedError);
 							}else if(xmlVerifiedRes){
-								if(!fullTextXmlFilename){
-									// console.log('xmlVerifiedRes',xmlVerifiedRes);
-									// not in Paperchase DB. If the xmlVerifiedRes has PII or DOI then use this to create the filename.
-									if(xmlVerifiedRes.pii){
-										fullTextXmlFilename = xmlVerifiedRes.pii.replace(/\//g,'_') + '.xml';
-									}else if(xmlVerifiedRes.doi){
-										fullTextXmlFilename = xmlVerifiedRes.doi.replace(/\//g,'_') + '.xml';
-									}else{
-										fullTextXmlFilename = 'PMC' + xmlVerifiedRes.pmc + '.xml';
-										console.log('    Uploading XML as PMC ID filename: ' + fullTextXmlFilename);
-									}
-								}
-								if(fullTextXmlFilename){
-									assets.saveLocallyAndUploadFile(journal, fullTextXmlFilename, fullXmlBody, 'xml',scb)
-									// upload_xml_string_as_file_to_s3(journal, fullXmlBody, fullTextXmlFilename, scb);
-								}
+								assets.saveLocallyAndUploadFile(journal, fullTextXmlFilename, fullXmlBody, 'xml',scb)
 							}
 						});
 					}
