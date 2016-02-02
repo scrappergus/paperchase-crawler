@@ -171,8 +171,8 @@ app.get('/get_article_pmc_xml/:journalname/:articleMongoId', function(req, res) 
 			console.error('ERROR',crawlXmlErr);
 			res.send(JSON.stringify(crawlXmlErr));
 		} else {
-			// console.log('crawlXmlRes');console.log(crawlXmlRes);
-			res.send(JSON.stringify(crawlXmlRes));
+			// console.log('crawlXmlRes',crawlXmlRes);
+			res.send(crawlXmlRes);
 		}
 	});
 });
