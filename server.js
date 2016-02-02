@@ -167,6 +167,7 @@ app.get('/crawl_xml/:journalname/', function(req, res) {
 app.get('/crawl_pdf/:journalname/', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.setHeader('Connection', 'keep-alive');
 	var journalName = req.params.journalname;
 	console.log('.. crawl : ' + journalName);
 	pdfCrawler.batchByJournal(journalName, function(crawlPdfErr, crawlPdfRes) {
@@ -373,6 +374,85 @@ app.get('/articles_epub_legacy/:journalname',function(req, res) {
 			res.send(JSON.stringify(articleDatesErr));
 		}else if(articleDates){
 			res.send(articleDates);
+		}
+	});
+});
+app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	console.log('.. Fill in article dates for : ' + journalName);
+	// get articles from PubMed and legacy DB that are missing in Paperchase
+
+	var result = {};
+	result.paperchaseWithoutPmid = []; // all Paperchase articles without PMID
+	result.paperchaseWithoutPmidUpdate = []; // Paperchase articles without PMID but one found
+	result.missingInPaperchase = []; // no record at all found via PII check
+
+
+	paperchase.allArticles(journalName, {}, {ids:true}, function(paperchaseArticlesError,paperchaseArticles){
+		if(paperchaseArticlesError) {
+			console.error('paperchaseArticlesError',paperchaseArticlesError);
+		}else if(paperchaseArticles){
+			console.log('Paperchase All Articles = ' + paperchaseArticles.length);
+			var journalIssn = journalSettings[journalName].issn
+			ncbi.getPmidListForIssn(journalIssn, function(pmidListErr, pmidList) {
+				if(pmidListErr) {
+					console.error('ERROR',pmidListErr);
+				}else if(pmidList){
+					// console.log('paperchaseArticles',paperchaseArticles);
+					// if(paperchaseArticles.length < pmidList.length){
+						var paperchasePmidList = [];
+						for(var article=0 ; article<paperchaseArticles.length ; article++){
+							if(paperchaseArticles[article].ids.pmid){
+								paperchasePmidList.push(paperchaseArticles[article].ids.pmid);
+							}else{
+								paperchaseArticles[article].ids._id = paperchaseArticles[article]._id;
+								result.paperchaseWithoutPmid.push(paperchaseArticles[article].ids);
+							}
+						}
+					// }
+					// using this to compare articles in paperchase, legacy and pubmed. PubMed API was returning an article twice, so remove duplicates to avoid this function thinking the pmid is missing
+					pmidList = shared.arrayRemoveDuplicate(pmidList);
+					console.log('Paperchase Articles w/PMID = ' + paperchasePmidList.length + '. PMID = ' + pmidList.length);
+					// console.log('Paperchase = ' + paperchasePmidList.length + '. PMID = ' + pmidList.length);
+					var missingInPaperchase = shared.arrayIntegersDifferences(pmidList,paperchasePmidList);
+					console.log('paperchaseWithoutPmid',result.paperchaseWithoutPmid);
+					console.log('missingInPaperchase',missingInPaperchase);
+					if(missingInPaperchase){
+						ncbi.titleAndIdsViaPmidList(missingInPaperchase,function(pubMedInfoError,pubMedList){
+							if(pubMedInfoError){
+								console.error('pubMedInfoError',pubMedInfoError);
+							}else if(pubMedList){
+								console.log('pubMedList',pubMedList);
+								if(result.paperchaseWithoutPmid){
+									for(var pcArticle=0 ; pcArticle<result.paperchaseWithoutPmid.length ; pcArticle++){
+										if(result.paperchaseWithoutPmid[pcArticle].ids && result.paperchaseWithoutPmid[pcArticle].ids.pii){
+											for(var pmArticle=0 ; pmArticle < pubMedList.length ; pmArticle++){
+												// TODO: more checks than just PII when article in Paperchase without
+												// PII Check
+												if(pubMedList[pmArticle].ids.pii && pubMedList[pmArticle].ids.pii == result.paperchaseWithoutPmid[pcArticle].ids.pii){
+													// article in paperchase DB but no PMID saved
+													result.paperchaseWithoutPmid[pcArticle].ids.pmid = pubMedList[pmArticle].ids.pmid;
+													result.paperchaseWithoutPmidUpdate.push(result.paperchaseWithoutPmid[pcArticle].ids);
+													delete pubMedList[pmArticle];
+												}
+											}
+										}
+									}
+								}
+								if(pubMedList.length > 0 ){
+									result.missingInPaperchase = pubMedList;
+								}
+								res.send(result);
+							}
+						});
+					}else{
+						// None missing in Paperchase
+						res.send(result);
+					}
+				}
+			});
 		}
 	});
 });

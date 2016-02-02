@@ -108,6 +108,31 @@ var ncbi = {
 			});
 		});
 	},
+	titleAndIdsViaPmidList: function(pmidList, cb){
+			async.mapSeries(pmidList, function(pmid, map_cb){
+				console.log('---- PMID: ' + pmid);
+				// Using PMID, retrieve article Title and ID list
+
+				ncbi.getArticleTitleAndIdsFromPmid(pmid, function(articleTitleError, articlePubMedData){
+					if(articleTitleError) {
+						console.error('ERROR', articleTitleError);
+						// map_cb();
+					}else if(articlePubMedData){
+						map_cb(null, articlePubMedData);
+					}
+				});
+			}, function(err, articles){
+				if(err) {
+					console.error('ERROR',err);
+					cb(err);
+				} else {
+					articles = shared.removeEmptyFromArray(articles);
+					// console.log('articles',articles);
+					cb(null, articles);
+				}
+			});
+
+	},
 	allArticlesTitleAndPMID: function(journal,journalSettings,cbBatch){
 		// console.log('..allArticlesTitleAndPMID');
 		// via PubMed
@@ -150,7 +175,8 @@ var ncbi = {
 	},
 	getPmcPdfUrl: function(ids, cb){
 		// via PMC
-		console.log('...getPmcPdfUrl: '+ JSON.stringify(ids));
+		// console.log('...getPmcPdfUrl: '+ JSON.stringify(ids));
+		var pdfUrl = 'http://www.ncbi.nlm.nih.gov/pmc/articles/' + ids.pmc + '/pdf/' + ids.pmc + '.pdf';
 		if(ids.pmc){
 			if(ids.pii || ids['publisher-id']){
 				var pii = ids.pii ? ids.pii : ids['publisher-id'];
@@ -158,6 +184,7 @@ var ncbi = {
 					ids.pmc = 'PMC' + ids.pmc;
 				}
 				var pdfUrl = 'http://www.ncbi.nlm.nih.gov/pmc/articles/' + ids.pmc + '/pdf/' + pii + '.pdf';
+				// console.log('   ' + pdfUrl);
 				cb(null, pdfUrl);
 			}else{
 				console.log('MISSING PII')
@@ -167,6 +194,7 @@ var ncbi = {
 			console.log('MISSING PMC ID')
 			cb(true);
 		}
+		// cb(null,pdfUrl);
 	},
 	getPmcPdf: function(ids,cb){
 		// via PMC
@@ -176,12 +204,12 @@ var ncbi = {
 				console.error('urlErr');
 				cb(urlErr);
 			}else if(pdfUrl){
-				// console.log('pdfUrl',pdfUrl);
+				console.log('   ' + pdfUrl);
 				request({url: pdfUrl, encoding: 'binary'}, function(pdfErr, response, body){
 					if(pdfErr) {
 						cb(pdfErr);
 					}else if(response){
-						// console.log('..... ' + pdfUrl + ' : ' + response.headers['content-type']);
+						console.log('..... ' + pdfUrl + ' : ' + response.headers['content-type']);
 						cb(null, body);
 					}
 				});

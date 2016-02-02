@@ -13,6 +13,37 @@ shared.removeEmptyFromArray = function(arr){
 	return temp;
 }
 
+shared.arrayRemoveDuplicate = function(arr){
+	arr = arr.filter(function(item, pos) {
+		return arr.indexOf(item) == pos;
+	});
+	return arr;
+}
+
+shared.arrayIntegersDifferences = function(a1, a2) {
+	var a = [],
+	diff = [];
+	a1.sort(function(a, b){return a-b});
+	a2.sort(function(a, b){return a-b});
+
+	for (var i = 0; i < a1.length; i++) {
+		a[a1[i]] = true;
+	}
+
+	for (var i = 0; i < a2.length; i++) {
+		if (a[a2[i]]) {
+			delete a[a2[i]];
+		} else {
+			a[a2[i]] = true;
+		}
+	}
+
+	for (var k in a) {
+		diff.push(k);
+	}
+
+	return diff;
+}
 
 shared.stripTitle = function(title){
 	return title.replace(/(\r\n|\n|\r)/gm,' ').replace(/\./g,' ').replace(/ /g,'').replace(/-/g,'').replace(/,/g,'').replace(/'/g,'').replace(/’/g,'').replace('–','').replace(/<[^>]*>/g,'').replace(/(\()/g,'').replace(/(\))/g,'').replace(/</g,'').replace(/>/g,'').replace(/>/g,'').replace(/&amp;gt;/g,'').toLowerCase();
@@ -79,6 +110,7 @@ shared.getFileExtension = function(fileName,cb){
 }
 
 shared.getFilesizeInBytes = function(filePath,cb) {
+	// console.log('getFilesizeInBytes: ' + filePath);
 	var stats = fs.statSync(filePath)
 	var fileSizeInBytes = stats["size"];
 	cb(fileSizeInBytes);
