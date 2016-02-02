@@ -319,5 +319,25 @@ module.exports = {
 					});
 				}
 		});
+	},
+	getByArticle: function(journal, articleMongoId, cb){
+		paperchase.getArticle(journal, {_id : articleMongoId}, {ids : 1}, function(paperchaseError,paperchaseArticle){
+			if(paperchaseError){
+				console.error('paperchaseError',paperchaseError);
+			}else if(paperchaseArticle){
+				// console.log('paperchaseArticle',paperchaseArticle);
+				paperchaseArticle.ids._id = paperchaseArticle._id;
+				getAndSavePmcXml(paperchaseArticle.ids, journal, function(uploadXmlError,uploadXmlRes){
+					if(uploadXmlError){
+						console.error('uploadXmlError',uploadXmlError);
+						cb(true,uploadXmlError);
+					}else if(uploadXmlRes){
+						cb(null,uploadXmlRes);
+					}else{
+						cb(null);
+					}
+				});
+			}
+		});
 	}
 }
