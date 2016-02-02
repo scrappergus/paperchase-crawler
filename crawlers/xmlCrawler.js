@@ -330,9 +330,9 @@ module.exports = {
 				getAndSavePmcXml(paperchaseArticle.ids, journal, function(uploadXmlError,uploadXmlRes){
 					if(uploadXmlError){
 						console.error('uploadXmlError',uploadXmlError);
-						cb(true,uploadXmlError);
+						cb(true,paperchaseArticle.ids._id);
 					}else if(uploadXmlRes){
-						cb(null,uploadXmlRes);
+						cb(null,paperchaseArticle.ids._id);
 					}else{
 						cb(null);
 					}
