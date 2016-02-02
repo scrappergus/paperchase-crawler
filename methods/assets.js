@@ -19,6 +19,14 @@ var assets = {
 				console.error('saveError');
 				cb(saveError);
 			}else if(localPath){
+				if(bucketFolder == 'pdf'){
+					shared.getFilesizeInBytes(localPath,function(fileSize){
+						if(fileSize < 15300){
+							console.log('   small: ' + fileName);
+						}
+					});
+				}
+
 				assets.uploadFileToS3(journal, fileName, localPath, bucketFolder, function(uploadError,filePublicUrl){
 					if(uploadError){
 						console.error('uploadError');
@@ -59,7 +67,7 @@ var assets = {
 		});
 	},
 	uploadFileToS3: function(journal, fileName, localPath, bucketFolder, cb){
-		console.log('...uploadFileToS3: ' + fileName);
+		// console.log('...uploadFileToS3: ' + fileName);
 		var bucket = config.s3.bucket + journal;
 		var uploader = s3Client.uploadFile({
 			s3RetryCount: 10,
@@ -81,7 +89,7 @@ var assets = {
 		});
 		uploader.on('end', function() {
 			var s3url = s3.getPublicUrlHttp(bucket, fileName); // TODO: this does not include folder, so link fails.
-			console.log('..... S3 : ' + s3url);
+			// console.log('..... S3 : ' + s3url);
 			cb(null, fileName);
 			fs.unlink(localPath);
 		});
