@@ -177,6 +177,7 @@ var ncbi = {
 		// via PMC
 		// console.log('...getPmcPdfUrl: '+ JSON.stringify(ids));
 		var pdfUrl = 'http://www.ncbi.nlm.nih.gov/pmc/articles/' + ids.pmc + '/pdf/' + ids.pmc + '.pdf';
+		// console.log('pdfUrl',pdfUrl);
 		if(ids.pmc){
 			if(ids.pii || ids['publisher-id']){
 				var pii = ids.pii ? ids.pii : ids['publisher-id'];
@@ -188,11 +189,11 @@ var ncbi = {
 				cb(null, pdfUrl);
 			}else{
 				console.log('MISSING PII')
-				cb(true);
+				cb('Paperchase MISSING PII');
 			}
 		}else{
 			console.log('MISSING PMC ID')
-			cb(true);
+			cb('Paperchase Missing PMC ID');
 		}
 		// cb(null,pdfUrl);
 	},
@@ -204,12 +205,12 @@ var ncbi = {
 				console.error('urlErr');
 				cb(urlErr);
 			}else if(pdfUrl){
-				console.log('   ' + pdfUrl);
+				// console.log('   ' + pdfUrl);
 				request({url: pdfUrl, encoding: 'binary'}, function(pdfErr, response, body){
 					if(pdfErr) {
 						cb(pdfErr);
 					}else if(response){
-						console.log('..... ' + pdfUrl + ' : ' + response.headers['content-type']);
+						// console.log('..... ' + pdfUrl + ' : ' + response.headers['content-type']);
 						cb(null, body);
 					}
 				});
