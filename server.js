@@ -336,6 +336,23 @@ app.get('/pubmed/ids_via_pii/:journalname/:pii', function(req, res) {
 		}
 	});
 });
+app.get('/ncbi/:db/article_count/:journalname/', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	var pii = req.params.pii;
+	var ncbiDb = req.params.db;
+	var journalIssn = journalSettings[journalName].issn;
+	console.log('.. ' +ncbiDb+ ' article count for ' + journalName);
+	ncbi.articleCount(ncbiDb, journalIssn, function(pubMedError, pubMedRes) {
+		if(pubMedError) {
+			console.error('pubmed article_count',pubMedError);
+			res.send(pubMedError);
+		}else if(pubMedRes){
+			res.send(pubMedRes)
+		}
+	});
+});
 
 // Paperchase Queries
 // ---------------------------------------

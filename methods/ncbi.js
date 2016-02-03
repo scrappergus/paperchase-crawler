@@ -6,7 +6,7 @@ var ncbi = {
 	getPmidListForIssn: function(issn, cb) {
 		// via PubMed
 		// console.log('... getPmidListForIssn : ' + issn);
-		var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=80000";
+		var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=8000000";
 		// var pmidListUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="+issn+"&RetMax=10"; // for testing locally, smaller response
 		request(pmidListUrl, function(err, res, body){
 			if(err) {
@@ -241,6 +241,17 @@ var ncbi = {
 					})
 				}
 
+			}
+		});
+	},
+	articleCount: function(ncbiDb, issn,cb){
+		var apiUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=' + ncbiDb + '&term='+issn+'&retmode=json&RetMax=1'; //retmax can be 1 because the resposne will include total
+		request(apiUrl, function(err, res, body){
+			if(err) {
+				cb(err);
+			} else if(body) {
+				var parsed = JSON.parse(body);
+				cb(null,parsed.esearchresult.count);
 			}
 		});
 	}
