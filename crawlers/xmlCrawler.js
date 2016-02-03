@@ -233,31 +233,8 @@ function getArticlesAndSaveXml(journal, pmid, paperchaseArticles, cb) {
 			}
 		});
 	}else{
-		// article NOT found in Paperchase DB
-		// Query PubMed for ID List
-		// still go ahead and upload. but use DOI or PII from XML for filename.
-		console.log('    MISSING In Paperchase : PMID = ' + pmid);
-		getArticleIdsFromPubMedAbstract(pmid,function(abstractIdsError, abstractIdsRes){
-			if(abstractIdsError){
-				console.error('abstractIdsError',abstractIdsError);
-				console.log('     Cannot get XML : PMID = ' + pmid); // No PMC ID to use
-			}else if(abstractIdsRes && abstractIdsRes.pmc){
-				// console.log('     abstractIdsRes',abstractIdsRes);
-				getAndSavePmcXml(abstractIdsRes, journal, function(uploadXmlError,uploadXmlRes){
-					if(uploadXmlError){
-						console.error('uploadXmlError',uploadXmlError);
-						cb(true,uploadXmlError);
-					}else if(uploadXmlRes){
-						cb(null,uploadXmlRes);
-					}else{
-						console.log('     No PMC ID');
-						cb(null);
-					}
-				});
-			}else{
-				cb(null);
-			}
-		});
+		// console.log('    MISSING In Paperchase : PMID = ' + pmid);
+		cb('Not in Paperchase: PMID ' + pmid);
 	}
 }
 
