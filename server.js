@@ -336,7 +336,7 @@ app.get('/pubmed/ids_via_pii/:journalname/:pii', function(req, res) {
 		}
 	});
 });
-app.get('/ncbi/:db/article_count/:journalname/', function(req, res) {
+app.get('/ncbi/article_count/:db/:journalname/', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	var journalName = req.params.journalname;
