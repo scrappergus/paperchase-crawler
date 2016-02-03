@@ -332,6 +332,9 @@ app.get('/pubmed/ids_via_pii/:journalname/:pii', function(req, res) {
 			console.error('ids_via_pii',pubMedError);
 			res.send(pubMedError);
 		}else if(pubMedRes){
+			if(!pubMedRes.ids.pii){
+				pubMedRes.ids.pii = pii;
+			}
 			res.send(pubMedRes)
 		}
 	});
