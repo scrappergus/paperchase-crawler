@@ -173,6 +173,7 @@ function verifyFullTextXml(xmlString, cb){
 }
 
 function getAndSavePmcXml(articleIds, journal, cb){
+	// console.log('..getAndSavePmcXml', articleIds);
 	if(articleIds.pmc){
 		console.log('... getAndSavePmcXml :  PMC ' + articleIds.pmc);
 		// Query PMC to get Full Text XML
@@ -306,6 +307,7 @@ module.exports = {
 		});
 	},
 	getByArticle: function(journal, articleMongoId, cb){
+		// console.log('..getByArticle: ' + articleMongoId);
 		paperchase.getArticle(journal, {_id : articleMongoId}, {ids : 1}, function(paperchaseError,paperchaseArticle){
 			if(paperchaseError){
 				console.error('paperchaseError',paperchaseError);

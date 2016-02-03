@@ -188,11 +188,11 @@ var ncbi = {
 				// console.log('   ' + pdfUrl);
 				cb(null, pdfUrl);
 			}else{
-				console.log('MISSING PII')
+				// console.log('MISSING PII')
 				cb('Paperchase MISSING PII');
 			}
 		}else{
-			console.log('MISSING PMC ID')
+			// console.log('MISSING PMC ID')
 			cb('Paperchase Missing PMC ID');
 		}
 		// cb(null,pdfUrl);
