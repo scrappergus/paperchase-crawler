@@ -217,7 +217,7 @@ var ncbi = {
 		});
 	},
 	getIdsViaPii: function(issn, pii, cb){
-		var apiUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term='+issn+'[journal]+'+pii+'&retmode=json';
+		var apiUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term='+issn+'[journal]+'+pii+'[pii]&retmode=json';
 		request(apiUrl, function(err, res, body){
 			if(err) {
 				cb(err);
@@ -231,6 +231,7 @@ var ncbi = {
 							cb(pmidVerifiedError);
 						}else if(idsViaPmid){
 							if(idsViaPmid.ids.pii == pii){
+								console.log('matched',idsViaPmid);
 								cb(null,idsViaPmid);
 							}else{
 								cb('Could not find PMID for PII ' + pii + '. Returned from PubMed: ' + JSON.string(idsViaPmid) );
