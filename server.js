@@ -492,6 +492,21 @@ app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
 		}
 	});
 });
+app.get('/article_ids_via_pmid/:pmid', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var pmid = req.params.pmid;
+	console.log('.. get IDs for PMID ' + pmid);
+	ncbi.getArticleTitleAndIdsFromPmid(pmid, function(ncbiError, ncbiRes) {
+		if(ncbiError) {
+			console.error('ncbiError',ncbiError);
+			res.send(JSON.stringify(crawlXmlErr));
+		} else {
+			res.send(ncbiRes);
+		}
+	});
+});
+
 
 app.listen(4932, function(){
 
