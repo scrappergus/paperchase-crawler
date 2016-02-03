@@ -243,8 +243,9 @@ var ncbi = {
 
 						}
 					})
+				}else{
+					cb('Could not find PMID for PII ' + pii);
 				}
-
 			}
 		});
 	},
