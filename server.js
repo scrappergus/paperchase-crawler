@@ -298,10 +298,12 @@ app.get('/titles/:journalname', function(req, res) {
 	});
 });
 app.get('/pubmed/all_titles_and_all_ids/:journalname', function(req, res) {
+	// this takes too long to response for large journals
 	res.setHeader('Content-Type', 'application/json');
-	res.setHeader('Access-Control-Allow-Origin', "*");
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.setHeader('CONNECTION', 'keep-alive');
 	var journalName = req.params.journalname;
-	var journalIssn = journalSettings[journalName].issn
+	var journalIssn = journalSettings[journalName].issn;
 	console.log('.. crawl : ' + journalName);
 	ncbi.getPmidListForIssn(journalIssn, function(pmidListError, pmidList) {
 		if(pmidListError) {
@@ -315,6 +317,22 @@ app.get('/pubmed/all_titles_and_all_ids/:journalname', function(req, res) {
 					res.send(result)
 				}
 			});
+		}
+	});
+});
+app.get('/pubmed/ids_via_pii/:journalname/:pii', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	var pii = req.params.pii;
+	var journalIssn = journalSettings[journalName].issn;
+	console.log('.. get IDs for PII ' + pii + ' in ' + journalName);
+	ncbi.getIdsViaPii(journalIssn, pii, function(pubMedError, pubMedRes) {
+		if(pubMedError) {
+			console.error('ids_via_pii',pubMedError);
+			res.send(pubMedError);
+		}else if(pubMedRes){
+			res.send(pubMedRes)
 		}
 	});
 });

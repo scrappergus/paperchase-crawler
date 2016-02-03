@@ -131,7 +131,6 @@ var ncbi = {
 					cb(null, articles);
 				}
 			});
-
 	},
 	allArticlesTitleAndPMID: function(journal,journalSettings,cbBatch){
 		// console.log('..allArticlesTitleAndPMID');
@@ -214,6 +213,33 @@ var ncbi = {
 						cb(null, body);
 					}
 				});
+			}
+		});
+	},
+	getIdsViaPii: function(issn, pii, cb){
+		var apiUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term='+issn+'[journal]+'+pii+'&retmode=json';
+		request(apiUrl, function(err, res, body){
+			if(err) {
+				cb(err);
+			} else if(body) {
+				var pubMedRes = JSON.parse(body);
+				if(pubMedRes.esearchresult.count == 1){
+					var pmid = pubMedRes.esearchresult.idlist[0];
+					ncbi.getArticleTitleAndIdsFromPmid(pmid,function(pmidVerifiedError,idsViaPmid){
+						if(pmidVerifiedError){
+							console.error('pmidVerifiedError',pmidVerifiedError);
+							cb(pmidVerifiedError);
+						}else if(idsViaPmid){
+							if(idsViaPmid.ids.pii == pii){
+								cb(null,idsViaPmid);
+							}else{
+								cb('Could not find PMID for PII ' + pii + '. Returned from PubMed: ' + JSON.string(idsViaPmid) );
+							}
+
+						}
+					})
+				}
+
 			}
 		});
 	}
