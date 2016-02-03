@@ -297,7 +297,27 @@ app.get('/titles/:journalname', function(req, res) {
 		}
 	});
 });
-
+app.get('/pubmed/all_titles_and_all_ids/:journalname', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', "*");
+	var journalName = req.params.journalname;
+	var journalIssn = journalSettings[journalName].issn
+	console.log('.. crawl : ' + journalName);
+	ncbi.getPmidListForIssn(journalIssn, function(pmidListError, pmidList) {
+		if(pmidListError) {
+			console.error('pmidListError',pmidListError);
+			res.send(pmidListError);
+		}else if(pmidList){
+			ncbi.titleAndIdsViaPmidList(pmidList,function(resultError,result){
+				if(resultError){
+					console.error('titles_and_all_ids',resultError);
+				}else{
+					res.send(result)
+				}
+			});
+		}
+	});
+});
 
 // Paperchase Queries
 // ---------------------------------------
