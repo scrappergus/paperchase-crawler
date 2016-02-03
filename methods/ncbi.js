@@ -48,30 +48,34 @@ var ncbi = {
 		request(articleJsonUrl, function(err, res, body){
 			if(err) {
 				cb(err);
-			}
-			if(res){
+			}else if(res){
 				var articleJson = JSON.parse(res.body);
-					articleJson = articleJson.result[pmid],
+					articleJson = articleJson.result[pmid];
+				if(articleJson){
 					articleIdList = articleJson['articleids'];
-				var artObj = {};
-					artObj['ids'] = {};
-				for(var i = 0 ; i < articleIdList.length ; i ++){
-					// artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value']; // do not want to get ALL IDs.
-					var idType;
-					idType = articleIdList[i]['idtype'];
-					if(idType == 'pmc'){
-						artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
-					}else if(idType == 'doi'){
-						artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
-					}else if(idType == 'pii'){
-						artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
-					}else if(idType == 'pubmed'){
-						artObj['ids']['pmid'] = articleIdList[i]['value']; //keep consistent with paperchase
+					var artObj = {};
+						artObj['ids'] = {};
+					for(var i = 0 ; i < articleIdList.length ; i ++){
+						// artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value']; // do not want to get ALL IDs.
+						var idType;
+						idType = articleIdList[i]['idtype'];
+						if(idType == 'pmc'){
+							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+						}else if(idType == 'doi'){
+							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+						}else if(idType == 'pii'){
+							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+						}else if(idType == 'pubmed'){
+							artObj['ids']['pmid'] = articleIdList[i]['value']; //keep consistent with paperchase
+						}
 					}
+					artObj['title'] = articleJson['title'];
+					// console.log(artObj);
+					cb(null,artObj);
+				}else{
+					cb('');
 				}
-				artObj['title'] = articleJson['title'];
-				// console.log(artObj);
-				cb(null,artObj);
+
 			}
 		});
 	},
