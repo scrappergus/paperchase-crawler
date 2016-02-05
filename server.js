@@ -362,6 +362,7 @@ app.get('/articles_epub_legacy/:journalname',function(req, res) {
 		}
 	});
 });
+// PubMed fill in aricles
 app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
 
 	res.setHeader('Content-Type', 'application/json');
@@ -370,7 +371,7 @@ app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
 	var journalName = req.params.journalname;
 
 	console.log('.. Fill in article for : ' + journalName);
-	// get articles from PubMed and legacy DB that are missing in Paperchase
+	// get articles from PubMed that are missing in Paperchase
 	res.setTimeout(120000, function(){
 		var result = {};
 		var paperchaseByPii = {};
@@ -442,6 +443,55 @@ app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
 		});
 	});
 });
+// Legacy fill in articles
+app.get('/fill_in_articles_from_legacy/:journalname',function(req, res) {
+
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.setHeader('Connection', 'keep-alive');
+	var journalName = req.params.journalname;
+
+	console.log('.. Fill in article for : ' + journalName);
+	// get articles from legacy DB that are missing in Paperchase
+	var addToPaperchase = [];
+	var paperchaseByPii = {};
+	var paperchasePmidList = [];
+	var legacyArticleIdField = journalSettings[journalName].mysql.articlesTable.articleId;
+	var legacyArticleTitleField = journalSettings[journalName].mysql.articlesTable.articleTitle;
+
+	paperchase.allArticles(journalName, {}, {ids:true}, function(paperchaseArticlesError,paperchaseArticles){
+		if(paperchaseArticlesError) {
+			console.error('paperchaseArticlesError',paperchaseArticlesError);
+		}else if(paperchaseArticles){
+			console.log('Paperchase All Articles = ' + paperchaseArticles.length);
+			// paperchaseByPii
+			paperchaseArticles.forEach(function(paperchaseA){
+				if(paperchaseA.ids.pii){
+					paperchaseByPii[paperchaseA.ids.pii] = paperchaseA;
+				}
+			});
+			legacy.getAllArticlesIdAndTitle(journalName, function(legacyArticles, mysqlErr ){
+				if(mysqlErr){
+					console.error('ERROR');
+					console.error(mysqlErr);
+				}else if(legacyArticles){
+					console.log('Legacy All Articles = ' + legacyArticles.length);
+					legacyArticles.forEach(function(legacyArticle){
+						if(legacyArticle[legacyArticleIdField] && !paperchaseByPii[legacyArticle[legacyArticleIdField]]){
+							var paperchaseObj = {
+								'pii' : legacyArticle[legacyArticleIdField],
+								'title' : legacyArticle[legacyArticleTitleField]
+							}
+							addToPaperchase.push(paperchaseObj);
+						}
+					});
+					res.send(addToPaperchase);
+				}
+			});
+
+		}
+	});
+});
 app.get('/article_ids_via_pmid/:pmid', function(req, res) {
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader('Access-Control-Allow-Origin', '*');
@@ -456,6 +506,7 @@ app.get('/article_ids_via_pmid/:pmid', function(req, res) {
 		}
 	});
 });
+
 
 
 app.listen(4932, function(){
