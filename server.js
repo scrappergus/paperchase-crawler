@@ -372,7 +372,7 @@ app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
 
 	console.log('.. Fill in article for : ' + journalName);
 	// get articles from PubMed that are missing in Paperchase
-	res.setTimeout(120000, function(){
+	// res.setTimeout(120000, function(){
 		var result = {};
 		var paperchaseByPii = {};
 		var paperchasePmidList = [];
@@ -410,7 +410,7 @@ app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
 						var missingInPaperchase = shared.arrayIntegersDifferences(paperchasePmidList,pubMedPmidList);
 						console.log(missingInPaperchase.length + ' = missingInPaperchase ');
 						if(missingInPaperchase){
-							ncbi.titleAndIdsViaPmidList(missingInPaperchase,function(pubMedInfoError,pubMedList){
+							ncbi.infoViaPmidList(missingInPaperchase,function(pubMedInfoError,pubMedList){
 								if(pubMedInfoError){
 									console.error('pubMedInfoError',pubMedInfoError);
 								}else if(pubMedList){
@@ -441,7 +441,7 @@ app.get('/fill_in_articles_from_pubmed/:journalname',function(req, res) {
 				});
 			}
 		});
-	});
+	// });
 });
 // Legacy fill in articles
 app.get('/fill_in_articles_from_legacy/:journalname',function(req, res) {
@@ -498,6 +498,20 @@ app.get('/article_ids_via_pmid/:pmid', function(req, res) {
 	var pmid = req.params.pmid;
 	console.log('.. get IDs for PMID ' + pmid);
 	ncbi.getArticleTitleAndIdsFromPmid(pmid, function(ncbiError, ncbiRes) {
+		if(ncbiError) {
+			console.error('ncbiError',ncbiError);
+			res.send(JSON.stringify(crawlXmlErr));
+		} else {
+			res.send(ncbiRes);
+		}
+	});
+});
+app.get('/article_info_via_pmid/:pmid', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var pmid = req.params.pmid;
+	console.log('.. get Info for PMID ' + pmid);
+	ncbi.getArticleInfoFromPmid(pmid, function(ncbiError, ncbiRes) {
 		if(ncbiError) {
 			console.error('ncbiError',ncbiError);
 			res.send(JSON.stringify(crawlXmlErr));

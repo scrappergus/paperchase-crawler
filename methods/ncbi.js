@@ -79,6 +79,56 @@ var ncbi = {
 			}
 		});
 	},
+	getArticleInfoFromPmid: function(pmid,cb){
+		// console.log('..getArticleInfoFromPmid : ' + pmid );
+		var articleJsonUrl = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=' + pmid;
+		request(articleJsonUrl, function(err, res, body){
+			if(err) {
+				cb(err);
+			}else if(res){
+				var articleJson = JSON.parse(res.body);
+					articleJson = articleJson.result[pmid];
+				if(articleJson){
+
+					// IDs
+					articleIdList = articleJson['articleids'];
+					var artObj = {};
+						artObj.ids = {};
+					for(var i = 0 ; i < articleIdList.length ; i ++){
+						// artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value']; // do not want to get ALL IDs.
+						var idType;
+						idType = articleIdList[i]['idtype'];
+						if(idType == 'pmc'){
+							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+						}else if(idType == 'doi'){
+							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+						}else if(idType == 'pii'){
+							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+						}else if(idType == 'pubmed'){
+							artObj['ids']['pmid'] = articleIdList[i]['value']; //keep consistent with paperchase
+						}
+					}
+					// Title
+					artObj.title = articleJson.title;
+
+					//Volume
+					if(articleJson.volume){
+						artObj.volume = parseInt(articleJson.volume);
+					}
+
+					//Issue
+					if(articleJson.issue){
+						artObj.issue = articleJson.issue;
+					}
+					console.log('artObj',artObj);
+					cb(null,artObj);
+				}else{
+					cb('');
+				}
+
+			}
+		});
+	},
 	allArticlesTitleAndIds: function(journal,journalSettings,cbBatch){
 		// console.log('..allArticlesTitleAndIds');
 		// via PubMed
@@ -118,6 +168,30 @@ var ncbi = {
 				// Using PMID, retrieve article Title and ID list
 
 				ncbi.getArticleTitleAndIdsFromPmid(pmid, function(articleTitleError, articlePubMedData){
+					if(articleTitleError) {
+						console.error('ERROR', articleTitleError);
+						// map_cb();
+					}else if(articlePubMedData){
+						map_cb(null, articlePubMedData);
+					}
+				});
+			}, function(err, articles){
+				if(err) {
+					console.error('ERROR',err);
+					cb(err);
+				} else {
+					articles = shared.removeEmptyFromArray(articles);
+					// console.log('articles',articles);
+					cb(null, articles);
+				}
+			});
+	},
+	infoViaPmidList: function(pmidList, cb){
+			async.mapSeries(pmidList, function(pmid, map_cb){
+				console.log('---- PMID: ' + pmid);
+				// Using PMID, retrieve article Title and ID list
+
+				ncbi.getArticleInfoFromPmid(pmid, function(articleTitleError, articlePubMedData){
 					if(articleTitleError) {
 						console.error('ERROR', articleTitleError);
 						// map_cb();
