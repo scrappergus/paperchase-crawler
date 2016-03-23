@@ -3,13 +3,15 @@
   "version": "0.0.2",
   "dependencies": {
     "async": "1.4.2",
+    "aws-sdk": "2.2.43",
+    "bluebird": "3.3.4",
+    "cheerio": "0.20.0",
     "express": "4.13.3",
-    "js2xmlparser": "^1.0.0",
-    "jsftp": "^1.5.2",
-    "mongodb": "~2.0",
+    "js2xmlparser": "1.0.0",
+    "jsftp": "1.5.2",
+    "mongodb": "2.0.55",
     "node-phantom-simple": "2.0.5",
-    "request": "^2.62.0",
-    "aws-sdk": "~2.2.16",
-    "xml2js": "^0.4.12"
+    "request": "2.62.0",
+    "xml2js": "0.4.12"
   }
 }
