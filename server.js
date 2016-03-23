@@ -7,6 +7,7 @@ var MongoClient = require('mongodb').MongoClient;
 var config = require('./config');
 var shared = require('./methods/shared');
 var journalSettings = config.journalSettings;
+var figureCrawler = require('./crawlers/figure-crawler');
 var xmlCrawler = require('./crawlers/xmlCrawler');
 var pdfCrawler = require('./crawlers/pdfCrawler');
 var ncbi = require('./methods/ncbi');
@@ -32,6 +33,18 @@ function mongo_query(journal, collection_name, query, cb) {
 		});
 	});
 }
+
+
+// FIGURES
+// ---------------------------------------
+// Single article scraping by pii
+app.get('/crawl_figures/:journalname/:pii', function(req, res) {
+	var journal = req.params.journalname;
+	var pii = req.params.pii;
+	figureCrawler.crawl(journal, pii, function(err, val) {
+		err ? res.status(400).send(err) : res.status(200).send(val);
+	});
+})
 
 // XML
 // ---------------------------------------
