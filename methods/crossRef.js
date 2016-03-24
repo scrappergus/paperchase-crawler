@@ -5,7 +5,8 @@ var http = require('http-request'); // more error info than request
 var crossRef = {};
 
 crossRef.doiUrl = function(pii,journalName){
-	return 'http://dx.doi.org/' + config.journalSettings[journalName]['doi'] + pii;
+//	return 'http://dx.doi.org/' + config.journalSettings[journalName]['doi'] + pii;
+	return config.journalSettings[journalName]['doi'] + pii;
 }
 
 crossRef.allArticlesCheck = function(journalName,articles,cb){
