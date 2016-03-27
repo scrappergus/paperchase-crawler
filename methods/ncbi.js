@@ -120,7 +120,7 @@ var ncbi = {
 					if(articleJson.issue){
 						artObj.issue = articleJson.issue;
 					}
-					console.log('artObj',artObj);
+					// console.log('artObj',artObj);
 					cb(null,artObj);
 				}else{
 					cb('');

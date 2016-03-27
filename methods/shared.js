@@ -50,33 +50,35 @@ shared.stripTitle = function(title){
 }
 
 shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,cb){
-	// console.log('..matchPmidAndPii');
+	// console.log('..matchPmidAndPii',pmidAndTitles);
 	var piiPmidPairs = [];
 	var unmatched = [];
 	for(var articleIdx=0 ; articleIdx < pmidAndTitles.length ; articleIdx++){
+
 		// console.log(articleIdx,JSON.stringify(pmidAndTitles[articleIdx]));
 		var articlePairsObject = pmidAndTitles[articleIdx];
 
-		var articleTitlePubMed = shared.stripTitle(pmidAndTitles[articleIdx]['title']); // PubMed ends title with punctuation
+		var articleTitlePubMed = shared.stripTitle(pmidAndTitles[articleIdx].title); // PubMed ends title with punctuation
 		// console.log(articlePmid);
 
 		// match PubMed title with Production DB title
 		for(var productionArticleIdx = 0 ; productionArticleIdx < productionArticles.length ; productionArticleIdx++){
 			// console.log(productionArticleIdx);
-			var articleTitleProduction = shared.stripTitle(productionArticles[productionArticleIdx]['title']);
+			var articleTitleProduction = shared.stripTitle(productionArticles[productionArticleIdx].title);
 
 			if(articleTitleProduction.toLowerCase() == articleTitlePubMed.toLowerCase()){
 				var legacyArticleIdField = config.journalSettings[journalName].mysql.articlesTable.articleId;
 				var articlePii = productionArticles[productionArticleIdx][legacyArticleIdField];
+				// console.log(articlePii);
 				if(articlePii){
 					articlePii = articlePii.toString();
 				}
-				articlePairsObject['ids']['pii'] = articlePii;
+				articlePairsObject.pii = articlePii;
 			}
 		}
 
-		if(!articlePairsObject['ids']['pii']){
-			console.log('PII Missing: ' + articlePairsObject['ids']['pmid']);
+		if(!articlePairsObject.pii){
+			console.log('PII Missing: ' + articlePairsObject.pmid);
 		}
 
 		// console.log('articlePairsObject',articlePairsObject);
@@ -84,6 +86,7 @@ shared.matchPmidAndPii = function(pmidAndTitles,productionArticles,journalName,c
 
 
 		if(articleIdx == parseInt(pmidAndTitles.length-1)){
+			console.log('piiPmidPairs',piiPmidPairs);
 			cb(null,piiPmidPairs,unmatched);
 		}
 	}

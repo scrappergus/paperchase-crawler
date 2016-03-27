@@ -203,7 +203,7 @@ app.get('/titles/:journalname', function(req, res) {
 	});
 });
 app.get('/pubmed/all_titles_and_all_ids/:journalname', function(req, res) {
-	// this takes too long to response for large journals
+	// this takes too long to respond for large journals
 	res.setHeader('Content-Type', 'application/json');
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	res.setHeader('CONNECTION', 'keep-alive');
@@ -311,7 +311,9 @@ app.get('/pmid_pii_pairs/:journalname', function(req, res) {
 						if(piiPmidPairs){
 							var pairsFile = '';
 							for(var matched=0 ; matched < piiPmidPairs.length ; matched++){
-								pairsFile += piiPmidPairs[matched]['pmid'] + '            ' + piiPmidPairs[matched]['pii'] + '\n';
+								if(piiPmidPairs[matched].pii){
+									pairsFile += piiPmidPairs[matched].pmid + '            ' + piiPmidPairs[matched].pii + '\n';
+								}
 							}
 							res.send(pairsFile);
 						}
