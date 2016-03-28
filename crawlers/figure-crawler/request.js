@@ -10,7 +10,10 @@ var BASE_URL = 'http://www.ncbi.nlm.nih.gov';
 exports.getPage = function(pmc) {
 	// return augmented page in promise
 	return new Promise(function(resolve, reject) {
-		var url = BASE_URL + '/pmc/articles/PMC' + pmc.replace('PMC', '');
+		var pmcId = pmc
+			.replace('PMC', '');
+
+		var url = BASE_URL + '/pmc/articles/PMC' + pmcId;
   		request.get(url, function(err, response, body) {
   			err ? reject(err) : resolve(cheerio.load(body));
   		});

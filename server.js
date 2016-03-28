@@ -41,7 +41,7 @@ function mongo_query(journal, collection_name, query, cb) {
 app.get('/crawl_figures/:journalname/:pii', function(req, res) {
 	var journal = req.params.journalname;
 	var pii = req.params.pii;
-	figureCrawler.crawl(journal, pii, function(err, val) {
+	figureCrawler.crawlArticle(journal, pii, function(err, val) {
 		err ? res.status(400).send(err) : res.status(200).send(val);
 	});
 })
