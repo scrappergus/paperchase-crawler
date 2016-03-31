@@ -62,6 +62,7 @@ How it works:
  - Gets title/PMID via PubMed, via ncbi.allArticlesTitleAndPMID()
  - Gets title/all IDs via legacy, via legacy.getAllArticlesIdAndTitle()
  - Matches titles and IDs, via shared.matchPmidAndPii()
+
 **/pmid_doi_pairs/:journalname**
 For creating PMID/DOI pairs file, to update article recordsa at PubMed to include DOI. This will first use the same pattern as **/pmid_pii_pairs/:journalname** for matching PII to PMID. Then using PII, the DOI is checked to see if registered. If registerd, then added to pairs file
 
