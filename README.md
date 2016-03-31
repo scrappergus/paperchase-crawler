@@ -24,6 +24,7 @@ XML
 ----
 **/crawl_xml/:journalname/**
  - Batch crawler to upload all journal PMC XML to S3
+
 **/get_article_pmc_xml/:journalname/:articleMongoId**
  - Per article, get PMC article XML
 
@@ -31,24 +32,30 @@ PDF
 ----
 **/crawl_pdf/:journalname/**
 Batch crawler to upload all journal PDF via PMC to S3
+
 **/get_article_pmc_pdf/:journalname/:articleMongoId**
 Per article
 
 DOI
 ----
 These use CrossRef’s API
+
 **/doi_status/:journalname/**
 DOI Status - for ALL articles in journal
+
 **/article/:journalname/:pii/doi_status**
 DOI Status - per article
 
 PubMed
 ----
 **/titles/:journalname**
+
 **/pubmed/all_titles_and_all_ids/:journalname**
 Returns all IDs and title for all articles in a journal at PubMed
 Might timeout for large archives
+
 **/pubmed/ids_via_pii/:journalname/:pii**
+
 **/ncbi/article_count/:db/:journalname/**
 
 NCBI & Legacy
