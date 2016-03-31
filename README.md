@@ -1,4 +1,4 @@
-Paperchase Crawler Documentation
+Paperchase Crawler
 ========================
 The crawler is used to send data to Paperchase for creating the database, crawling PMC for article assets, DOI status, utility tools etc..
 
@@ -68,10 +68,16 @@ For creating PMID/DOI pairs file, to update article recordsa at PubMed to includ
 Paperchase Setup
 ----
 **/initiate_articles_collection/:journalname**
+
 Articles Collection: for getting PMID, PII, title into MongoLab DB. Sends to Paperchase to insert so that _id has same type. Via shell _id is Object. Via Mongo default is strig. the rest of the data is process in Paperchase via articleMethods.processXML
+
 **/articles_epub_legacy/:journalname**
+
 **/fill_in_articles_from_pubmed/:journalname**
+
 **/fill_in_articles_from_legacy/:journalname**
+
 **/article_ids_via_pmid/:pmid**
+
 **/article_info_via_pmid/:pmid**
 
