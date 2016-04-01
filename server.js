@@ -14,6 +14,7 @@ var ncbi = require('./methods/ncbi');
 var legacy = require('./methods/legacy');
 var paperchase = require('./methods/paperchase');
 var crossRef = require('./methods/crossRef');
+var updateIndexers = require('./methods/updateIndexers');
 
 var app = express();
 app.use(express.static('public'));
@@ -180,7 +181,7 @@ app.get('/article/:journalname/:pii/doi_status', function(req, res) {
 		}else if(result){
 			res.send(result);
 		}
-	})
+	});
 });
 
 
@@ -316,6 +317,48 @@ app.get('/pmid_pii_pairs/:journalname', function(req, res) {
 								}
 							}
 							res.send(pairsFile);
+						}
+					})
+				}
+			})
+		}
+	});
+});
+app.get('/pmid_doi_pairs/:journalname', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	var journalName = req.params.journalname;
+	console.log('.. PMID/DOI Pairs for : ' + journalName);
+	ncbi.allArticlesTitleAndPMID(journalName, journalSettings, function(titlesErr, pmidAndTitles) {
+		if(titlesErr) {
+			console.error('ERROR:');
+			res.send(JSON.stringify(titlesErr));
+		}
+		if(pmidAndTitles){
+			// console.log('crawlXmlRes');console.log(crawlXmlRes);
+			// res.send(JSON.stringify(titles));
+			legacy.getAllArticlesIdAndTitle(journalName, function(legacyArticles, mysqlErr ){
+				if(mysqlErr){
+					console.error('ERROR');
+					console.error(mysqlErr);
+				}
+				if(legacyArticles){
+					// console.log('legacyArticles count = ' + legacyArticles.length);
+					// now we have PII/title via legacy AND PMID/title from PubMed. Now compare titles and create pairs file
+					// loop throug PubMed array, because this will have less than legacy DB. Also, we are submitting to PubMed, so we can only submit pairs file for when PMID exists
+					shared.matchPmidAndPii(pmidAndTitles,legacyArticles,journalName,function(matchError,piiPmidPairs){
+						if(matchError){
+							console.error(matchError);
+						}
+						if(piiPmidPairs){
+							updateIndexers.createPmidDoiPairsFile(journalName, piiPmidPairs,function(error,pairsFile){
+								if(error){
+									console.error(error);
+									res.send(error);
+								}else if(pairsFile){
+									res.send(pairsFile);
+								}
+							});
 						}
 					})
 				}
