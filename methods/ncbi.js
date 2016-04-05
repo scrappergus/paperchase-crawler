@@ -124,7 +124,7 @@ var ncbi = {
 					//Epub
 					if(articleJson.epubdate){
 						artObj.dates = {};
-						artObj.dates.epub = new Date(articleJson.epubdate  + ' 00:00:00.0000');
+						artObj.dates.epub = articleJson.epubdate;
 					}
 					// console.log('artObj',artObj);
 					cb(null,artObj);
