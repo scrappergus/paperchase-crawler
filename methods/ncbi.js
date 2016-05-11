@@ -54,19 +54,19 @@ var ncbi = {
 				if(articleJson){
 					articleIdList = articleJson['articleids'];
 					var artObj = {};
-						artObj['ids'] = {};
+						artObj.ids = {};
 					for(var i = 0 ; i < articleIdList.length ; i ++){
-						// artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value']; // do not want to get ALL IDs.
+						// artObj.ids[articleIdList[i].idtype] = articleIdList[i].value; // do not want to get ALL IDs.
 						var idType;
-						idType = articleIdList[i]['idtype'];
+						idType = articleIdList[i].idtype;
 						if(idType == 'pmc'){
-							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+							artObj.ids[articleIdList[i].idtype] = articleIdList[i].value;
 						}else if(idType == 'doi'){
-							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+							artObj.ids[articleIdList[i].idtype] = articleIdList[i].value;
 						}else if(idType == 'pii'){
-							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+							artObj.ids[articleIdList[i].idtype] = articleIdList[i].value;
 						}else if(idType == 'pubmed'){
-							artObj['ids']['pmid'] = articleIdList[i]['value']; //keep consistent with paperchase
+							artObj.ids['pmid'] = articleIdList[i].value; //keep consistent with paperchase
 						}
 					}
 					artObj['title'] = articleJson['title'];
@@ -89,23 +89,23 @@ var ncbi = {
 				var articleJson = JSON.parse(res.body);
 					articleJson = articleJson.result[pmid];
 				if(articleJson){
-
+					// console.log('articleJson',articleJson);
 					// IDs
-					articleIdList = articleJson['articleids'];
+					articleIdList = articleJson.articleids;
 					var artObj = {};
 						artObj.ids = {};
 					for(var i = 0 ; i < articleIdList.length ; i ++){
-						// artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value']; // do not want to get ALL IDs.
+						// artObj.ids[articleIdList[i].idtype] = articleIdList[i].value; // do not want to get ALL IDs.
 						var idType;
-						idType = articleIdList[i]['idtype'];
+						idType = articleIdList[i].idtype;
 						if(idType == 'pmc'){
-							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+							artObj.ids[articleIdList[i].idtype] = articleIdList[i].value;
 						}else if(idType == 'doi'){
-							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+							artObj.ids[articleIdList[i].idtype] = articleIdList[i].value;
 						}else if(idType == 'pii'){
-							artObj['ids'][articleIdList[i]['idtype']] = articleIdList[i]['value'];
+							artObj.ids[articleIdList[i].idtype] = articleIdList[i].value;
 						}else if(idType == 'pubmed'){
-							artObj['ids']['pmid'] = articleIdList[i]['value']; //keep consistent with paperchase
+							artObj.ids.pmid = articleIdList[i].value; //keep consistent with paperchase
 						}
 					}
 					// Title
@@ -119,6 +119,12 @@ var ncbi = {
 					//Issue
 					if(articleJson.issue){
 						artObj.issue = articleJson.issue;
+					}
+
+					//Epub
+					if(articleJson.epubdate){
+						artObj.dates = {};
+						artObj.dates.epub = articleJson.epubdate;
 					}
 					// console.log('artObj',artObj);
 					cb(null,artObj);
@@ -134,9 +140,9 @@ var ncbi = {
 		// via PubMed
 		// var journalDb = journalSettings[journal].dbUrl,
 		journalIssn = journalSettings[journal].issn;
-		console.log('--- Begin PMID/Title Crawler : ' + journal);
+		// console.log('--- Begin PMID/Title Crawler : ' + journal);
 		ncbi.getPmidListForIssn(journalIssn, function(err, list){
-			console.log('     PubMed Article Count: ' + list.length);
+			// console.log('     PubMed Article Count: ' + list.length);
 			// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated getPmidListForIssn if archive larger than 80k)
 			async.mapSeries(list, function(pmid, map_cb){
 				// console.log('---- PMID: ' + pmid);
@@ -188,7 +194,7 @@ var ncbi = {
 	},
 	infoViaPmidList: function(pmidList, cb){
 			async.mapSeries(pmidList, function(pmid, map_cb){
-				console.log('---- PMID: ' + pmid);
+				// console.log('---- PMID: ' + pmid);
 				// Using PMID, retrieve article Title and ID list
 
 				ncbi.getArticleInfoFromPmid(pmid, function(articleTitleError, articlePubMedData){
@@ -220,7 +226,7 @@ var ncbi = {
 				console.log('     PubMed Article Count: ' + list.length);
 				// List = All PMID retrieved from PubMed query using Journal ISSN (limit set to 80000 in API request to PubMed DB. updated getPmidListForIssn if archive larger than 80k)
 				async.mapSeries(list, function(pmid, map_cb){
-					console.log('---- PMID: ' + pmid);
+					// console.log('---- PMID: ' + pmid);
 					// Using PMID, retrieve article Title and ID list
 
 					ncbi.getTitleByPMID(pmid, function(articleTitleError, articleTitle){
