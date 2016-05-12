@@ -14,49 +14,108 @@ var Promise = require('bluebird');
 		})
 */
 
-var crawl = exports.crawl = function(journal, pii, cb) {
+module.exports.cleanS3 = function() {
+	return s3.retrieve()
+		.then(function(list) {
+			var objects = list
+				.filter(function(object) {
+					return object.Key.match(/\.(jpg|png)$/);
+				})
+				.map(function(object) {
+					return {
+						Key: object.Key
+					};
+				});
+
+			return s3.delete(objects);
+		});
+};
+
+module.exports.crawlJournal = function(journal) {
 	var db = new Database(journal);
-	var articleId, figureId, figures, locations;
-
-	Promise.all([
-		db.getArticle(pii),
-		db.getFigure(pii)
-	])
-		.spread(function(articleDoc, figureDoc) {
-			articleId = articleDoc._id;
-			figureId = figureDoc._id;
-			figures = figureDoc.figures;
-
-			return request.getPage(articleDoc.ids.pmc)
-		})
-		.then(function(page) {
-			var uploads = figures.map(function(figure) {
-				var path = page('#' + figure.figureID + ' img').attr('src-large');
-				return request.getImage(path)
-					.then(function(stream) {
-						return s3.upload(articleId + '_' + figure.figureID, stream);
+	return db.getArticles()
+		.then(function(docs) {
+			recurse();
+			function recurse() {
+				setTimeout(function() {
+					var doc = docs.pop();
+					if (!doc) {
+						console.log('COMPLETE');
+						return;
+					}
+					if (!doc.ids.pmc) {
+						console.log('MISSING:', doc._id, 'No PMC');
+						return recurse();
+					}
+					crawl(journal, doc, function(err, results) {
+						if (err) {
+							console.log('ERROR:', doc._id, err);
+						} else {
+							console.log('SUCCESS:', doc._id, results);
+						}
+						recurse();
 					});
-			});
+				}, 250);
+			}
+		});
+};
+
+module.exports.crawlArticle = function(journal, pii, cb) {
+	var db = new Database(journal);
+	db.getArticle(pii)
+		.then(function(articleDoc) {
+			crawl(journal, articleDoc, cb);
+		});
+};
+
+function crawl(journal, articleDoc, cb) {
+	var db = new Database(journal);
+	var figures;
+	request.getPage(articleDoc.ids.pmc)
+		.then(function(page) {
+			var uploads = page('img[src-large]')
+				.map(function(i, el) {
+					var $el = page(el);
+					var title = $el.attr('title').split(' ');
+					var path = $el.attr('src-large');
+					var split = path.split('.');
+					return {
+						path: path,
+						extension: path.indexOf('.') === -1 ? 'png' : split[split.length - 1],
+						id: title[0][0].toLowerCase() + title[1]
+					};
+				})
+				.toArray()
+				.map(function(figure) {
+					var filename = (articleDoc._id + '_' + figure.id + '.' + figure.extension)
+						.replace('..', '.')
+						.replace('undefined', '1');
+
+					return request.getImage(figure.path)
+						.then(function(stream) {
+							return s3.upload(filename, stream);
+						});
+				});
 
 			return Promise.all(uploads);
 		})
 		.then(function(uploads) {
-			locations = uploads.map(function(upload) {
-				return upload.Location;
-			});
-
-			var updatedFigures = utils.zip(figures, locations, function(figure, location) {
-				var updatedFigure = Object.assign({}, figure);
-				updatedFigure.imgUrls = [location];
-				return updatedFigure;
-			});
-
-			return db.updateFigure(figureId, updatedFigures);
+			figures = uploads
+				.map(function(upload) {
+					return upload.Location;
+				})
+				.map(function(location) {
+					var id = location.match(/\_([a-zA-Z0-9\-]+)\./)[1];
+					return {id: id, file: location};
+				});
+			return db.updateFigure(articleDoc._id, figures);
 		})
 		.then(function() {
-			cb(null, locations);
+			cb(null, figures.map(function(figure) {
+				return figure.file;
+			}));
 		})
 		.catch(function(err) {
 			cb(err);
 		});
-};
+}

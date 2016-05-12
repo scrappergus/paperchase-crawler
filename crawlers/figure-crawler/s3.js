@@ -15,10 +15,32 @@ exports.upload = function(filename, stream) {
 	return new Promise(function(resolve, reject) {
 		s3.upload({
 			Bucket: config.s3.bucket,
-			Key: filename + '.jpg',
+			Key: 'paper_figures/' + filename,
 			Body: stream
 		}, function(err, data) {
 			err ? reject(err) : resolve(data);
+		});
+	});
+};
+
+exports.retrieve = function() {
+	return new Promise(function(resolve, reject) {
+		s3.listObjects({Bucket: config.s3.bucket}, function(err, data) {
+			err? reject(err): resolve(data.Contents);
+		});
+	});
+};
+
+exports.delete = function(objects) {
+	return new Promise(function(resolve, reject) {
+		s3.deleteObjects({
+		  Bucket: config.s3.bucket,
+		  Delete: {
+		    Objects: objects,
+		    Quiet: false
+		  }
+		}, function(err, data) {
+			err? reject(err): resolve(data);
 		});
 	});
 };

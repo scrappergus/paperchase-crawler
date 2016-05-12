@@ -16,6 +16,17 @@ Database.prototype.connect = function() {
 	}.bind(this));
 }
 
+Database.prototype.getArticles = function() {
+	return this.connect()
+		.then(function(db) {
+			return new Promise(function(resolve, reject) {
+				db.collection('articles').find({}).toArray(function(err, docs) {
+					err? reject(err): resolve(docs);
+				});
+			});
+		});
+};
+
 Database.prototype.getArticle = function(pii) {
 	return this.connect()
 		.then(function(db) {
@@ -28,17 +39,12 @@ Database.prototype.getArticle = function(pii) {
 		});
 };
 
-Database.prototype.getFigure = function(pii) {
+Database.prototype.getFigure = function(mongoId) {
 	return this.connect()
 		.then(function(db) {
 			return new Promise(function(resolve, reject) {
 				db.collection('figures').findOne({
-					ids: { 
-						$elemMatch: {
-							type: 'pii', 
-							id: pii
-						}
-					}
+					'ids.mongo_id': mongoId
 				}, function(err, doc) {
 					db.close();
 					err ? reject(err) : resolve(doc);
@@ -51,10 +57,13 @@ Database.prototype.updateFigure = function(id, figures) {
 	return this.connect()
 		.then(function(db) {
 			return new Promise(function(resolve, reject) {
-				db.collection('figures').updateOne({_id: id}, {
-			        $set: {
-			          	figures: figures
-			        }
+				db.collection('figures').updateOne({'ids.mongo_id': id}, {
+					ids: {
+						mongo_id: id,
+					},
+					figures: figures
+	      		}, {
+	      			upsert: true
 	      		}, function(err, doc) {
 					db.close();
 					err ? reject(err) : resolve(doc);

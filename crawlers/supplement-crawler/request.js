@@ -8,7 +8,6 @@ var http = require('http');
 var BASE_URL = 'http://www.ncbi.nlm.nih.gov';
 
 exports.getPage = function(pmc) {
-	// return augmented page in promise
 	return new Promise(function(resolve, reject) {
 		var pmcId = pmc
 			.replace('PMC', '');
@@ -20,8 +19,7 @@ exports.getPage = function(pmc) {
 	});
 };
 
-exports.getImage = function(path) {
-	// return download stream in promise
+exports.getFile = function(path) {
 	return new Promise(function(resolve) {
 		http.get(BASE_URL + path, function(stream) {
 			resolve(stream);
