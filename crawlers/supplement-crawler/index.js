@@ -16,7 +16,12 @@ module.exports.crawlArticle = function (journal, pii) {
         .then(function(page) {
             var uploads = doc.files && doc.files.supplemental && doc.files.supplemental
                 .map(function(supplement) {
-                    var path = page('#' + supplement.id + '> div > a').attr('href');
+                    var pad = "000"
+                    var supp_id_nums = supplement.id.replace(/\D+/g, '');
+                    supp_id_nums = pad.substring(0, pad.length - supp_id_nums.length) + supp_id_nums;
+
+                    var path = page('#' + supplement.id).find("[href*='"+supp_id_nums+"']").attr('href');
+
                     var parts = path && path.split('.');
                     var extension = parts && parts[parts.length -1];
                     var supplementId = supplement.id.toLowerCase();
