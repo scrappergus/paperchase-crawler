@@ -4,7 +4,7 @@ var shared = require('../methods/shared');
 var request = require('request').defaults({ encoding: null });
 var fs = require('fs');
 // var s3 = require('s3');
-var s3 = require('node-s3-client');
+var s3 = require('s3');
 var s3Client = s3.createClient({
 	s3Options: {
 		accessKeyId: config.s3.key,

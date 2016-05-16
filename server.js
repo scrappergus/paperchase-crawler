@@ -7,6 +7,7 @@ var MongoClient = require('mongodb').MongoClient;
 var config = require('./config');
 var shared = require('./methods/shared');
 var journalSettings = config.journalSettings;
+var xmlPdfCrawler = require('./crawlers/xml-pdf-crawler');
 var figureCrawler = require('./crawlers/figure-crawler');
 var supplementalCrawler = require('./crawlers/supplement-crawler');
 var xmlCrawler = require('./crawlers/xmlCrawler');
@@ -36,6 +37,20 @@ function mongo_query(journal, collection_name, query, cb) {
 	});
 }
 
+// XML AND PDF
+// ---------------------------------------
+// Single article scraping by pii
+app.get('/crawl_content/:journalname/:pii', function(req, res) {
+	var journal = req.params.journalname;
+	var pii = req.params.pii;
+	xmlPdfCrawler.crawlArticle(journal, pii)
+        .then(function (val) {
+            res.status(200).send(val);
+        })
+        .catch(function(err) {
+            res.status(400).send(err);
+        });
+})
 
 // SUPPLEMENTAL
 // ---------------------------------------

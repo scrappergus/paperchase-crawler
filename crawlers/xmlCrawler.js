@@ -303,5 +303,6 @@ module.exports = {
 				});
 			}
 		});
-	}
+	},
+    getAndSavePmcXml: getAndSavePmcXml
 }
