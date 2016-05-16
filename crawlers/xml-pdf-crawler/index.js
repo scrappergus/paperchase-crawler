@@ -23,7 +23,7 @@ module.exports.crawlArticle = function (journal, pii) {
 };
 
 function getAndUploadXml(journal, id, pmc) {
-    return Promise.resolve();
+//    return Promise.resolve();
     return new Promise(function (resolve, reject) {
         xmlCrawler.getAndSavePmcXml({
             mongo_id: id,
