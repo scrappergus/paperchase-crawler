@@ -27,7 +27,7 @@ module.exports = {
 		var journalDb = journalSettings[journal].dbUrl,
 			journalIssn = journalSettings[journal].issn;
 		var s3Folder = 'pdf';
-		paperchase.allArticles(journal, {'ids.pmc' : {$exists:true},'ids.pii' : {$exists:true},}, {ids:true},function(paperchaseArticlesError,paperchaseArticles){
+		paperchase.allArticles(journal, {'ids.pmc' : {$exists:true},'ids.pii' : {$exists:true}, 'files.xml': {$exists:true}}, {ids:true},function(paperchaseArticlesError,paperchaseArticles){
 			if(paperchaseArticlesError){
 				console.error('paperchaseArticlesError',paperchaseArticlesError);
 			}else if(paperchaseArticles){
@@ -79,18 +79,24 @@ module.exports = {
 						// console.error('errorPdf',errorPdf);
 						cb(errorPdf);
 					}else if(resultPdfData){
-						var fileName = articleMongoId + '.pdf';
-						assets.saveLocallyAndUploadFile(journal, fileName, resultPdfData, s3Folder, function(pdfUploadError,pdfUploadRes){
-							if(pdfUploadError){
-								// console.error('pdfUploadError');
-								cb(pdfUploadError)
-							}else if(pdfUploadRes){
-								article.pdf_url =  'http://s3-us-west-1.amazonaws.com/paperchase-' + journal + '/pdf/' + pdfUploadRes; // TODO: method uploadFileToS3 should return public URL but the folder is not being included.
-								cb(null,article);
-							}else{
-								console.error('Unable to save file locally and upload to S3');
-							}
-						});
+                        if(resultPdfData.match('The IP address used for your Internet connection is part of a subnet that has been blocked from access to PubMed Central')) {
+                            cb('Crawling blocked by PMC');
+                        }
+                        else {
+                            var fileName = articleMongoId + '.pdf';
+                            assets.saveLocallyAndUploadFile(journal, fileName, resultPdfData, s3Folder, function(pdfUploadError,pdfUploadRes){
+                                    if(pdfUploadError){
+                                        // console.error('pdfUploadError');
+                                        cb(pdfUploadError)
+                                    }else if(pdfUploadRes){
+                                        article.pdf_url =  'http://s3-us-west-1.amazonaws.com/paperchase-' + journal + '/pdf/' + pdfUploadRes; // TODO: method uploadFileToS3 should return public URL but the folder is not being included.
+                                        cb(null,article);
+                                    }else{
+                                        console.error('Unable to save file locally and upload to S3');
+                                    }
+                                });
+
+                        }
 					}else{
 						cb(null,null);
 					}
