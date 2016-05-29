@@ -56,6 +56,16 @@ app.get('/crawl_advance_aging/:vol/:num/:pii', function(req, res) {
         });
 });
 
+app.get('/crawl_advance_aging/:vol/:num', function(req, res) {
+    advanceAgingCrawler.crawlArticles(req.params.vol, req.params.num)
+        .then(function(val) {
+            res.status(200).send(val);
+        })
+        .catch(function(err) {
+            res.status(400).send(err.toString());
+        });
+});
+
 // XML AND PDF
 // ---------------------------------------
 // Single article scraping by pii

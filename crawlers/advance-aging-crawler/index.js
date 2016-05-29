@@ -5,12 +5,31 @@ var Database = require('./database');
 var request = require('./request');
 var s3 = require('./s3');
 
-module.exports.crawlArticle = function(vol, num, pii) {
+module.exports.crawlArticles = function(vol, num) {
+    var db = new Database;
+    return db.getAdvanceArticles()
+        .then(function(articles) {
+            return Promise.all(articles.map(function(article) {
+                console.log('ARTICLE', article._id, article.ids.pii);
+                return crawlArticle(vol, num, article.ids.pii)
+                    .then(function(val) {
+                        console.log('SUCCESS', article._id, article.ids.pii);
+                        return val;
+                    })
+                    .catch(function(err) {
+                        console.log('ERROR', article._id, article.ids.pii, err);
+                    });
+            }));
+        });
+};
+
+var crawlArticle = module.exports.crawlArticle = function(vol, num, pii) {
     var db = new Database;
     return request.getPage(vol, num, pii)
         .then(function(page) {
             page('table')
                 .addClass('bordered')
+                .wrap('<div class="article-table"></div>')
                 .each(function(i, el) {
                     page(el).attr('id', 'T' + (i + 1).toString());
                 });
@@ -21,6 +40,12 @@ module.exports.crawlArticle = function(vol, num, pii) {
 
             page('h4')
                 .addClass('article-header-2');
+
+            page('img')
+                .addClass('full-text-image')
+                .attr('width', '')
+                .attr('height', '')
+                .wrap('<div class="full-text-image-container"></div>');
 
             var promises = page('.content')
                 .find('img')

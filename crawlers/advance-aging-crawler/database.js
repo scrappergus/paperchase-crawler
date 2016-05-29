@@ -16,6 +16,19 @@ Database.prototype.connect = function() {
     }.bind(this));
 }
 
+Database.prototype.getAdvanceArticles = function() {
+    return this.connect()
+        .then(function(db) {
+            return new Promise(function(resolve, reject) {
+                db.collection('articles').find({
+                    advance: true
+                }).toArray(function(err, docs) {
+                    err ? reject(err) : resolve(docs);
+                });
+            });
+        });
+};
+
 Database.prototype.updateArticle = function(pii, content) {
     return this.connect()
         .then(function(db) {
