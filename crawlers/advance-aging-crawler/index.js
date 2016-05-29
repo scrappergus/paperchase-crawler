@@ -115,7 +115,6 @@ var crawlArticle = module.exports.crawlArticle = function(vol, num, pii) {
                     return supplements;
                 })
                 .then(function(supplements) {
-                    console.log('ABSTRACT:', Object.keys(page('.abstract > p')), page('.abstract > p').firstChild);
                     return Promise.all([
                         page('.content').html(),
                         page('.abstract').html(),
