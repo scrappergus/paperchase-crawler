@@ -7,9 +7,10 @@ var MongoClient = require('mongodb').MongoClient;
 var config = require('./config');
 var shared = require('./methods/shared');
 var journalSettings = config.journalSettings;
-var xmlPdfCrawler = require('./crawlers/xml-pdf-crawler');
 var figureCrawler = require('./crawlers/figure-crawler');
+var xmlPdfCrawler = require('./crawlers/xml-pdf-crawler');
 var supplementalCrawler = require('./crawlers/supplement-crawler');
+var advanceAgingCrawler = require('./crawlers/advance-aging-crawler');
 var xmlCrawler = require('./crawlers/xmlCrawler');
 var pdfCrawler = require('./crawlers/pdfCrawler');
 var ncbi = require('./methods/ncbi');
@@ -36,6 +37,19 @@ function mongo_query(journal, collection_name, query, cb) {
 		});
 	});
 }
+
+// AGING ADVANCE
+// ---------------------------------------
+// Get HTML for advance articles
+app.get('/crawl_advance_aging/:vol/:num/:pii', function(req, res) {
+    advanceAgingCrawler.crawlArticle(req.params.vol, req.params.num, req.params.pii)
+        .then(function(val) {
+            res.status(200).send(val);
+        })
+        .catch(function(err) {
+            res.status(400).send(err.toString());
+        });
+});
 
 // XML AND PDF
 // ---------------------------------------
