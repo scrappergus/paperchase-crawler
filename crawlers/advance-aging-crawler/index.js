@@ -5,7 +5,25 @@ var Database = require('./database');
 var request = require('./request');
 var s3 = require('./s3');
 
-module.exports.crawlArticle = function(vol, num, pii) {
+module.exports.crawlArticles = function(vol, num) {
+    var db = new Database;
+    return db.getAdvanceArticles()
+        .then(function(articles) {
+            return Promise.all(articles.map(function(article) {
+                console.log('ARTICLE', article._id, article.ids.pii);
+                return crawlArticle(vol, num, article.ids.pii)
+                    .then(function(val) {
+                        console.log('SUCCESS', article._id, article.ids.pii);
+                        return val;
+                    })
+                    .catch(function(err) {
+                        console.log('ERROR', article._id, article.ids.pii, err);
+                    });
+            }));
+        });
+};
+
+var crawlArticle = module.exports.crawlArticle = function(vol, num, pii) {
     var db = new Database;
     return request.getPage(vol, num, pii)
         .then(function(page) {
