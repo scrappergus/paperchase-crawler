@@ -311,6 +311,24 @@ app.get('/article_count/:journalname', function(req, res) {
 	});
 });
 
+// Returns XML with paths modified to work in Lens
+app.get('/lens-xml/:journalname/:pcid', function(req, res) {
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var journalName = req.params.journalname;
+	var pcid = req.params.pcid;
+	console.log('.. Lens specific XML : ' + journalName + ' Paperchase ID : '+ pcid);
+	paperchase.lensXml({journal: journalName, pcid: pcid}, function(err, pcxml) {
+		if(err) {
+			console.error('ERROR:');
+			res.sendStatus(JSON.stringify(err));
+		}else if(count){
+			res.sendStatus(pcxml,200);
+		}
+	});
+});
+
+
 // Paperchase Setup
 // ---------------------------------------
 // Legacy: for when PubMed XML does not contain PII, use the legacy DB to get PII/title and use PubMed to get PMID/title. Matched PII/PMID will be pushed to an array. Then this will be used to create the output pairs file. Unmatched PMID are logged in the console
