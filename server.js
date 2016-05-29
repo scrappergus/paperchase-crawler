@@ -359,24 +359,26 @@ app.get('/lens-xml/:journalname/:pcid', function(req, res) {
 
                                 figs = article[0].files.figures;
 
-                                for(var k=0; k < figs.length;k++) {
-                                    var fig = figs[k];
-                                    var node = xpath.select1("//fig[@id='"+fig.id+"']/graphic", doc);
-                                    if(node !== undefined) {
-                                        pcxml = pcxml.replace(node.attributes[0].value, config.journalSettings[journalName].s3Url+"/paper_figures/"+fig.file);
+                                if(figs) {
+                                    for(var k=0; k < figs.length;k++) {
+                                        var fig = figs[k];
+                                        var node = xpath.select1("//fig[@id='"+fig.id+"']/graphic", doc);
+                                        if(node !== undefined) {
+                                            pcxml = pcxml.replace(node.attributes[0].value, config.journalSettings[journalName].s3Url+"/paper_figures/"+fig.file);
+                                        }
                                     }
                                 }
 
                                 sups = article[0].files.supplemental;
-                                for(var k=0; k < sups.length;k++) {
-                                    var sup = sups[k];
-                                    var node = xpath.select1("//supplementary-material[@id='"+sup.id+"']/media", doc);
-                                    if(node !== undefined) {
-                                        pcxml = pcxml.replace(node.attributes[2].value, config.journalSettings[journalName].s3Url+"/supplemental_materials/"+sup.file);
+                                if(sups) {
+                                    for(var k=0; k < sups.length;k++) {
+                                        var sup = sups[k];
+                                        var node = xpath.select1("//supplementary-material[@id='"+sup.id+"']/media", doc);
+                                        if(node !== undefined) {
+                                            pcxml = pcxml.replace(node.attributes[2].value, config.journalSettings[journalName].s3Url+"/supplemental_materials/"+sup.file);
+                                        }
                                     }
                                 }
-
-
 
                                 console.log('Sending Lens XML');
                                 res.send(pcxml);
