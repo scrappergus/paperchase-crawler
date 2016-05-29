@@ -3,6 +3,7 @@ var async = require('async');
 var request = require('request');
 var express = require('express');
 var MongoClient = require('mongodb').MongoClient;
+
 // Custom
 var config = require('./config');
 var shared = require('./methods/shared');
@@ -18,6 +19,10 @@ var legacy = require('./methods/legacy');
 var paperchase = require('./methods/paperchase');
 var crossRef = require('./methods/crossRef');
 var updateIndexers = require('./methods/updateIndexers');
+
+var xpath = require('xpath')
+, dom = require('xmldom').DOMParser
+
 
 var app = express();
 app.use(express.static('public'));
@@ -334,6 +339,55 @@ app.get('/article_count/:journalname', function(req, res) {
 		}
 	});
 });
+
+// Returns XML with paths modified to work in Lens
+app.get('/lens-xml/:journalname/:pcid', function(req, res) {
+        res.set('Access-Control-Allow-Origin', '*');
+        res.type('xml');
+        var journalName = req.params.journalname;
+        var pcid = req.params.pcid.replace('.xml', '');
+        paperchase.lensXml({journal: journalName, pcid: pcid}, function(err, pcxml) {
+                if(err) {
+                    res.sendStatus(JSON.stringify(err));
+                }else if(pcxml){
+                    mongo_query(journalName, 'articles', {"_id": pcid}, function(err, article) {
+                            if(err) {
+                                console.error('ERROR:');
+                                res.sendStatus("Couldn't retrieve filenames");
+                            }else if(article){
+                                var doc = new dom().parseFromString(pcxml)
+
+                                figs = article[0].files.figures;
+
+                                if(figs) {
+                                    for(var k=0; k < figs.length;k++) {
+                                        var fig = figs[k];
+                                        var node = xpath.select1("//fig[@id='"+fig.id+"']/graphic", doc);
+                                        if(node !== undefined) {
+                                            pcxml = pcxml.replace(node.attributes[0].value, config.journalSettings[journalName].s3Url+"/paper_figures/"+fig.file);
+                                        }
+                                    }
+                                }
+
+                                sups = article[0].files.supplemental;
+                                if(sups) {
+                                    for(var k=0; k < sups.length;k++) {
+                                        var sup = sups[k];
+                                        var node = xpath.select1("//supplementary-material[@id='"+sup.id+"']/media", doc);
+                                        if(node !== undefined) {
+                                            pcxml = pcxml.replace(node.attributes[2].value, config.journalSettings[journalName].s3Url+"/supplemental_materials/"+sup.file);
+                                        }
+                                    }
+                                }
+
+                                console.log('Sending Lens XML');
+                                res.send(pcxml);
+                            }
+                        }); 
+                }
+            });
+    });
+
 
 // Paperchase Setup
 // ---------------------------------------

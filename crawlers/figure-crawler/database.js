@@ -55,21 +55,35 @@ Database.prototype.getFigure = function(mongoId) {
 
 Database.prototype.updateFigure = function(id, figures) {
 	return this.connect()
-		.then(function(db) {
-			return new Promise(function(resolve, reject) {
-				db.collection('figures').updateOne({'ids.mongo_id': id}, {
-					ids: {
-						mongo_id: id,
-					},
-					figures: figures
-	      		}, {
-	      			upsert: true
-	      		}, function(err, doc) {
-					db.close();
-					err ? reject(err) : resolve(doc);
-				});
-			});
-		});
+    .then(function(db) {
+            return new Promise(function(resolve, reject) {
+                    db.collection('articles').findOne({'_id': id}, {
+                        }, function(err, doc) {
+                            var figs = doc.files.figures || [];
+                            for(var i=0; i < figures.length ; i++){
+                                if(figs[i] === undefined) {
+                                    figs[i] = {
+                                        id:figures[i].id,
+                                        file:figures[i].file.replace(/^.*[\\\/]/, '')
+                                    };
+                                }
+                                figs[i].file = figures[i].file.replace(/^.*[\\\/]/, '');
+                            }
+
+                            db.collection('articles').updateOne({
+                                    _id: id
+                                }, {
+                                    $set: {
+                                        'files.figures': figs
+                                    }
+                                }, function(err, doc) {
+                                    db.close();
+                                    err ? reject(err) : resolve(doc);
+                                });
+
+                        });
+                });
+        });
 };
 
 module.exports = Database;
