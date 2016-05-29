@@ -7,7 +7,7 @@ var http = require('http');
 
 var BASE_URL = 'http://impactaging.com/papers/v';
 
-exports.getImage = function(vol, num, path) {
+exports.getFile = function(vol, num, path) {
     return new Promise(function(resolve) {
         var url = BASE_URL + vol + '/n' + num + '/full/' + path;
         http.get(url, function(stream) {

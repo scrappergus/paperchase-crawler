@@ -14,7 +14,7 @@ Database.prototype.connect = function() {
             err ? reject(err) : resolve(db);
         }.bind(this));
     }.bind(this));
-}
+};
 
 Database.prototype.getAdvanceArticles = function() {
     return this.connect()
@@ -29,7 +29,21 @@ Database.prototype.getAdvanceArticles = function() {
         });
 };
 
-Database.prototype.updateArticle = function(pii, content) {
+Database.prototype.getArticle = function(pii) {
+    return this.connect()
+        .then(function(db) {
+            return new Promise(function(resolve, reject) {
+                db.collection('articles').findOne({
+                    'ids.pii': pii
+                }, function(err, doc) {
+                    db.close();
+                    err ? reject(err) : resolve(doc);
+                });
+            });
+        });
+};
+
+Database.prototype.updateArticle = function(pii, content, abstract, supplements, pdf) {
     return this.connect()
         .then(function(db) {
             return new Promise(function(resolve, reject) {
@@ -37,7 +51,10 @@ Database.prototype.updateArticle = function(pii, content) {
                     'ids.pii': pii
                 }, {
                     $set: {
-                        advanceContent: content
+                        advanceContent: content,
+                        abstract: abstract,
+                        'files.supplemental': supplements,
+                        'files.pdf': pdf
                     }
                 }, function(err, doc) {
                     db.close();
