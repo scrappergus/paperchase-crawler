@@ -11,6 +11,7 @@ module.exports.crawlArticle = function(vol, num, pii) {
         .then(function(page) {
             page('table')
                 .addClass('bordered')
+                .wrap('<div class="article-table"></div>')
                 .each(function(i, el) {
                     page(el).attr('id', 'T' + (i + 1).toString());
                 });
@@ -21,6 +22,12 @@ module.exports.crawlArticle = function(vol, num, pii) {
 
             page('h4')
                 .addClass('article-header-2');
+
+            page('img')
+                .addClass('full-text-image')
+                .attr('width', '')
+                .attr('height', '')
+                .wrap('<div class="full-text-image-container"></div>');
 
             var promises = page('.content')
                 .find('img')
