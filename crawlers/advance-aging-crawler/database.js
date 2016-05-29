@@ -16,7 +16,7 @@ Database.prototype.connect = function() {
     }.bind(this));
 }
 
-Database.prototype.updateArticle = function(pii, advance) {
+Database.prototype.updateArticle = function(pii, content) {
     return this.connect()
         .then(function(db) {
             return new Promise(function(resolve, reject) {
@@ -24,7 +24,7 @@ Database.prototype.updateArticle = function(pii, advance) {
                     'ids.pii': pii
                 }, {
                     $set: {
-                        advanceContent: advance
+                        advanceContent: content
                     }
                 }, function(err, doc) {
                     db.close();
