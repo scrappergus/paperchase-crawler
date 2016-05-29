@@ -8,6 +8,8 @@ var xml2js = require('xml2js');
 var request = require('request');
 var journalSettings = config.journalSettings;
 
+var shared= require('../methods/shared.js');
+
 
 var paperchase = {
 	articleCount: function(journal,cb){
@@ -22,6 +24,23 @@ var paperchase = {
 			}
 		});
 	},
+
+	lensXml: function(opts,cb){
+        //opts {journal, pcid}
+        var xmlUrl = config.journalSettings[opts.journal].s3Url + "/xml/" + opts.pcid + ".xml";
+
+		console.log('...retrieving : ' + opts.pcid);
+		paperchase.getArticle(opts.journal, {"_id": opts.pcid}, {}, function(err,res){
+			if(err){
+				cb(err);
+			}else if(res){
+                shared.getFileDataFromUrl(xmlUrl, function(err, data) {
+                        cb(null,data);
+                    }); 
+			}
+		});
+	},
+
 	// insertArticle: function (articleData,journal,cb) {
 	// 	// console.log('..insertArticle');
 	// 	var dbName = journalSettings[journal]['mongo']['name'];
@@ -255,6 +274,7 @@ var paperchase = {
 					if(authenticateError){
 						console.error(authenticateError);
 					}else if(userAuthenticated){
+                        console.log(query);
 						db.collection('articles').findOne(query, projection,function(findError,findResult){
 							if(findError){
 								console.error('findError', findError);

@@ -93,7 +93,7 @@ function crawl(journal, articleDoc, cb) {
 
 					return request.getImage(figure.path)
 						.then(function(stream) {
-							return s3.upload(filename, stream);
+							return s3.upload(journal, filename, stream);
 						});
 				});
 
