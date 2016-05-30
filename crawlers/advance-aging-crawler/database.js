@@ -44,18 +44,29 @@ Database.prototype.getArticle = function(pii) {
 };
 
 Database.prototype.updateArticle = function(pii, content, abstract, supplements, pdf) {
+    var obj = {
+        content: content
+    };
+
+    if (abstract) {
+        obj.abstract = abstract;
+    }
+
+    if (pdf) {
+        obj.pdf = pdf;
+    }
+
+    if (supplements) {
+        obj.supplements = supplements;
+    }
+
     return this.connect()
         .then(function(db) {
             return new Promise(function(resolve, reject) {
                 db.collection('articles').updateOne({
                     'ids.pii': pii
                 }, {
-                    $set: {
-                        advanceContent: content,
-                        abstract: abstract,
-                        'files.supplemental': supplements,
-                        'files.pdf': pdf
-                    }
+                    $set: obj
                 }, function(err, doc) {
                     db.close();
                     err ? reject(err) : resolve(doc);

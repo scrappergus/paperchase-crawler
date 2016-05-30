@@ -7,6 +7,15 @@ var http = require('http');
 
 var BASE_URL = 'http://impactaging.com/papers/v';
 
+exports.getPdf = function(vol, num, pii) {
+    return new Promise(function(resolve) {
+        var url = BASE_URL + vol + '/n' + num + '/pdf/' + pii + '.pdf';
+        http.get(url, function(stream) {
+            resolve(stream);
+        });
+    });
+};
+
 exports.getFile = function(vol, num, path) {
     return new Promise(function(resolve) {
         var url = BASE_URL + vol + '/n' + num + '/full/' + path;

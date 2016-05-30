@@ -2,7 +2,7 @@
 
 var Promise = require('bluebird');
 var Database = require('./database');
-var files = require('./filesystem');
+// var files = require('./filesystem');
 var request = require('./request');
 var s3 = require('./s3');
 
@@ -54,7 +54,7 @@ var crawlArticle = module.exports.crawlArticle = function(vol, num, pii) {
                 });
 
             var docxUrl = page('.c-exclude-from-xml > a').attr('href');
-            var supplements = !docxUrl ? Promise.resolve() : request.getFile(docxUrl)
+            var supplements = !docxUrl ? Promise.resolve() : request.getFile(vol, num, docxUrl)
                 .then(function(stream) {
                     return s3.uploadSupplement(doc._id + '_sd1.docx', stream);
                 })
@@ -98,8 +98,7 @@ var crawlArticle = module.exports.crawlArticle = function(vol, num, pii) {
                             });
             */
 
-            var pdfUrl = page('.pdf').attr('href');
-            var pdf = !pdfUrl ? Promise.resolve() : request.getFile(pdfUrl)
+            var pdf = request.getFile(vol, num, pii)
                 .then(function(stream) {
                     return s3.uploadPdf(doc._id + '.pdf', stream);
                 })
@@ -117,7 +116,7 @@ var crawlArticle = module.exports.crawlArticle = function(vol, num, pii) {
                 .then(function(supplements) {
                     return Promise.all([
                         page('.content').html(),
-                        page('.abstract').html(),
+                        page('.abstract').find('p').innerHTML,
                         supplements,
                         pdf
                     ]);
