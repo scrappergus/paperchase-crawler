@@ -43,9 +43,9 @@ Database.prototype.getArticle = function(pii) {
         });
 };
 
-Database.prototype.updateArticle = function(pii, content, abstract, supplements, pdf) {
+Database.prototype.updateArticle = function(pii, content, abstract, pdf) {
     var obj = {
-        content: content
+        advanceContent: content
     };
 
     if (abstract) {
@@ -53,11 +53,7 @@ Database.prototype.updateArticle = function(pii, content, abstract, supplements,
     }
 
     if (pdf) {
-        obj.pdf = pdf;
-    }
-
-    if (supplements) {
-        obj.supplements = supplements;
+        obj['files.pdf'] = pdf;
     }
 
     return this.connect()

@@ -52,78 +52,48 @@ var crawlArticle = module.exports.crawlArticle = function(vol, num, pii) {
                             $el.attr('src', url);
                         });
                 });
-
-            var docxUrl = page('.c-exclude-from-xml > a').attr('href');
-            var supplements = !docxUrl ? Promise.resolve() : request.getFile(vol, num, docxUrl)
-                .then(function(stream) {
-                    return s3.uploadSupplement(doc._id + '_sd1.docx', stream);
-                })
-                .then(function() {
-                    return [{
-                        file: doc._id + '_sd1.docx',
-                        display: true
-                    }];
-                });
-
-
-            /* EXTRACT SUPPLEMENTS
-                        var supplements = !docxUrl ? Promise.resolve() : request.getFile(docxUrl)
-                            .then(function(stream) {
-                                return files.uploadStream(stream, 'sup.docx');
-                            })
-                            .then(function(stream) {
-                                return files.extractMedia(stream);
-                            })
-                            .then(function(filepaths) {
-                                var id;
-                                var promises = filepaths
-                                    .map(function(filepath, i) {
-                                        var extension = filepath.match(/\.(\w+)$/);
-                                        return {
-                                            id: 'sd' + (i + 1).toString(),
-                                            stream: files.getStream(filepath),
-                                            name: doc._id + '_' + id + '.' + extension
-                                        };
-                                    })
-                                    .map(function(file) {
-                                        return s3.upload(file.stream, file.name)
-                                            .then(function() {
-                                                return {
-                                                    id: file.id.toUpperCase(),
-                                                    file: file.name
-                                                };
-                                            });
-                                    });
-                                return Promise.all(promises);
-                            });
-            */
-
-            var pdf = request.getFile(vol, num, pii)
-                .then(function(stream) {
-                    return s3.uploadPdf(doc._id + '.pdf', stream);
-                })
-                .then(function() {
-                    return {
-                        file: doc._id + '.pdf',
-                        display: true
-                    };
-                });
+                //
+                // var docxUrl = page('.c-exclude-from-xml > a').attr('href');
+                // var supplements = !docxUrl ? Promise.resolve() : request.getFile(vol, num, docxUrl)
+                //     .then(function(stream) {
+                //         return s3.uploadSupplement(doc._id + '_sd1.docx', stream);
+                //     })
+                //     .then(function() {
+                //         return [{
+                //             file: doc._id + '_sd1.docx',
+                //             display: true
+                //         }];
+                //     });
+                //
+                // var pdf = request.getFile(vol, num, pii)
+                //     .then(function(stream) {
+                //         return s3.uploadPdf(doc._id + '.pdf', stream);
+                //     })
+                //     .then(function() {
+                //         return {
+                //             file: doc._id + '.pdf',
+                //             display: true
+                //         };
+                //     });
 
             return Promise.all(promises)
-                .then(function() {
-                    return supplements;
-                })
-                .then(function(supplements) {
+                .then(function(upload) {
+                    var url = 'http://impactaging.com/papers/v' + vol + '/n' + num + '/pdf/' + pii + '.pdf';
+                    var filename = 'pdf/' + doc._id + '.pdf';
                     return Promise.all([
                         page('.content').html(),
-                        page('.abstract').find('p').innerHTML,
-                        supplements,
-                        pdf
+                        page('.abstract').children('p').html(),
+                        request.getPdf(url, filename).then(function() {
+                            return {
+                                display: true,
+                                file: doc._id + '.pdf'
+                            };
+                        })
                     ]);
                 });
         })
-        .spread(function(content, abstract, supplements, pdf) {
-            return db.updateArticle(pii, content, abstract, supplements, pdf);
+        .spread(function(content, abstract, pdf) {
+            return db.updateArticle(pii, content, abstract, pdf);
         });
 };
 
