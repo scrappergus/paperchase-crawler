@@ -1,0 +1,14 @@
+{
+  "name": "scrapey",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "node test/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mime": "^1.3.4"
+  }
+}
