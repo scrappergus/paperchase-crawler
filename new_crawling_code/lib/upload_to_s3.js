@@ -1,5 +1,6 @@
 'use strict';
 
+const Promise = require('./promise');
 const config = require('../config');
 const aws = require('aws-sdk');
 const http = require('http');

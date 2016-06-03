@@ -1,12 +1,13 @@
 'use strict';
 
-const config = require('../config');
 const fs = require('fs');
+const path = require('path');
 const http = require('http');
 const unzip = require('unzip');
-const crypto = require('crypto');
 const aws = require('aws-sdk');
-const path = require('path');
+const crypto = require('crypto');
+const config = require('../config');
+const Promise = require('./promise');
 
 aws.config.update({
     accessKeyId: config.s3.key,
@@ -24,18 +25,18 @@ module.exports = (url, partialName) => new Promise((resolve, reject) => {
 
     http.get(url, (read) => {
         read.pipe(write);
-        write.on('finish', () => fs.readdir(mediaDir, (err, files) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(Promise.all(files.map((fileName, index) => {
+        write.on('finish', () => fs.readdir(mediaDir, (e, files) => {
+            e ? reject(e) : resolve(Promise.all(files.map((fileName, index) => {
                 const read = fs.createReadStream(`${mediaDir}/${fileName}`);
                 const extension = path.extname(fileName);
                 return new Promise((resolve, reject) => s3.upload({
                     Bucket: config.s3.bucket,
                     Key: `${partialName}${index + 1}${extension}`,
                     Body: read
-                }, (err, data) => err ? reject(err) : resolve(data)));
+                }, (e, data) => e ? reject(e) : resolve({
+                    id: 'SD' + (index + 1),
+                    file: data.Key
+                })));
             })));
         }));
     });
