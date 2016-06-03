@@ -8,6 +8,7 @@ const aws = require('aws-sdk');
 const crypto = require('crypto');
 const config = require('../config');
 const Promise = require('./promise');
+const validate = require('./validate_image');
 
 aws.config.update({
     accessKeyId: config.s3.key,
@@ -27,16 +28,22 @@ module.exports = (url, partialName) => new Promise((resolve, reject) => {
         read.pipe(write);
         write.on('finish', () => fs.readdir(mediaDir, (e, files) => {
             e ? reject(e) : resolve(Promise.all(files.map((fileName, index) => {
-                const read = fs.createReadStream(`${mediaDir}/${fileName}`);
-                const extension = path.extname(fileName);
-                return new Promise((resolve, reject) => s3.upload({
-                    Bucket: config.s3.bucket,
-                    Key: `${partialName}${index + 1}${extension}`,
-                    Body: read
-                }, (e, data) => e ? reject(e) : resolve({
-                    id: 'SD' + (index + 1),
-                    file: data.Key
-                })));
+                const filePath = `${mediaDir}/${fileName}`;
+                validate(filePath).then(() => {
+                    const read = fs.createReadStream(filePath);
+                    const extension = path.extname(fileName);
+                    return new Promise((resolve, reject) => s3.upload({
+                        Bucket: config.s3.bucket,
+                        Key: `${partialName}${index + 1}${extension}`,
+                        Body: read
+                    }, (e, data) => {
+                        console.log('supplemental image', data);
+                        return e ? reject(e) : resolve({
+                            id: 'SD' + (index + 1),
+                            file: data.Key
+                        });
+                    }));
+                });
             })));
         }));
     });

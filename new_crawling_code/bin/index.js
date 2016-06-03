@@ -36,7 +36,7 @@ module.exports = (v, n, pii) => co(function*() {
     const supExists = page('body').html().indexOf(`${pii}/SupData.docx`) !== -1;
     console.log('get supplement file and extract images (if exists)');
     const supplemental = yield supExists ?
-        supplementToS3(supUrl, `${article.id}_sd`) :
+        supplementToS3(supUrl, `supplemental_materials/${article.id}_sd`) :
         Promise.resolve();
     console.log('get abstract');
     const abstract = getAbstract(page);
