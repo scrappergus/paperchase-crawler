@@ -13,7 +13,6 @@ var s3 = new aws.S3();
 
 exports.upload = function(journal, filename, pdf) {
 	return new Promise(function(resolve, reject) {
-        console.log(config.s3);
 		s3.upload({
 			Bucket: config.journalSettings[journal].bucket,
 			Key: 'pdf/' + filename,

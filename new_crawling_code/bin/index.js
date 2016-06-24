@@ -6,6 +6,7 @@ const extend = require('../lib/extend_object');
 const getHtml = require('../lib/get_html');
 const uploadToS3 = require('../lib/upload_to_s3');
 const supplementToS3 = require('../lib/supplement_to_s3');
+//const getJson = require('../lib/get_json');
 const getContent = require('../lib/get_content_and_images');
 const getMeta = require('../lib/get_metadata');
 const getAbstract = require('../lib/get_abstract');
@@ -21,17 +22,23 @@ module.exports = (v, n, pii) => co(function*() {
     const article = yield getArticle(pii);
     console.log('get html from page', pageUrl);
     const page = yield getHtml(pageUrl);
-    console.log('upload pdf to s3', pdfUrl, `${article.id}.pdf`);
-    const pdfUpload = yield uploadToS3(pdfUrl, `${article.id}.pdf`);
+
+    const truePage = page;
+
     console.log('upload images and parse and format content');
     const contentData = yield getContent(page, article.id, imgUrl);
     const advanceContent = contentData.content;
+
+    console.log('upload pdf to s3', pdfUrl, `${article.id}.pdf`);
+    const pdfUpload = yield uploadToS3(pdfUrl, `${article.id}.pdf`);
+
     const figures = contentData.figures.length > 1 ?
         contentData.figures :
         undefined;
     const pdf = {
         file: pdfUpload.Key
     };
+
     console.log('determine if supplement file exists on page');
     const supExists = page('body').html().indexOf(`${pii}/SupData.docx`) !== -1;
     console.log('get supplement file and extract images (if exists)');
@@ -41,7 +48,7 @@ module.exports = (v, n, pii) => co(function*() {
     console.log('get abstract');
     const abstract = getAbstract(page);
     console.log('get metadata');
-    const metaData = getMeta(page);
+    const metaData = getMeta(page, contentData);
     const files = extend({}, {
         supplemental,
         figures,
