@@ -47,7 +47,9 @@ crossRef.registered = function(doiUrl, cb){
 	var connectionRefused = false;
 	request.get('http://api.crossref.org/works/' + doiUrl, function(err, res){
 		// console.log('-------------------------------------'+doiUrl);
-		if(err && res.statusCode == '404'){
+		if(res === undefined) {
+			article.registered = false;
+		} else if(err && res.statusCode == '404'){
 			// DOI is not registered
 			article.registered = false;
 		}else if(err && err.statusCode == 'ECONNREFUSED'){
